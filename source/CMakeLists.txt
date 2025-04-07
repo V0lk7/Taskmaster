@@ -13,42 +13,57 @@ add_executable(taskmasterd)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-find_library(TESTLIB NAMES yaml-cpp PATHS "${CMAKE_SOURCE_DIR}/lib")
+find_library(TESTLIB NAMES yaml-cpp nanomsg PATHS "${CMAKE_SOURCE_DIR}/lib")
 
 if(NOT TESTLIB)
-  message(FATAL_ERROR "yaml-cpp library not found!")
+  message(FATAL_ERROR "Library not found!")
 endif()
 
 add_library(libyaml_cpp SHARED IMPORTED)
-set_target_properties(libyaml_cpp PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/lib/libyaml-cpp.so)
+set_target_properties(
+  libyaml_cpp PROPERTIES
+  IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/lib/yaml-cpp/libyaml-cpp.so.0.8.0
+)
+
+add_library(libnanomsg SHARED IMPORTED)
+set_target_properties(
+  libnanomsg
+  PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/lib/nanomsg/libnanomsg.so.6.0.1
+)
 
 #==================Binaries
 target_compile_features(taskmasterctl PUBLIC cxx_std_11)
 target_compile_features(taskmasterd PUBLIC cxx_std_11)
 
-target_compile_options(taskmasterctl
+target_compile_options(
+  taskmasterctl
   PRIVATE
     -Wall
     -Wextra
     -Werror
 )
-target_compile_options(taskmasterd
+target_compile_options(
+  taskmasterd
   PRIVATE
     -Wall
     -Wextra
     -Werror
 )
 
-target_include_directories(taskmasterctl
+target_include_directories(
+  taskmasterctl
   PRIVATE 
     ${CMAKE_SOURCE_DIR}/include/taskmasterctl
     ${CMAKE_SOURCE_DIR}/include/yaml-cpp-0.8.0
+    ${CMAKE_SOURCE_DIR}/include/libnanomsg.6.0.1
 )
 
-target_include_directories(taskmasterd
+target_include_directories(
+  taskmasterd
   PRIVATE 
     ${CMAKE_SOURCE_DIR}/include/taskmasterd
     ${CMAKE_SOURCE_DIR}/include/yaml-cpp-0.8.0
+    ${CMAKE_SOURCE_DIR}/include/libnanomsg.6.0.1
 )
 
 file(GLOB_RECURSE TASKMASTERCTL_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/taskmasterctl/*.cpp")
@@ -57,9 +72,15 @@ file(GLOB_RECURSE TASKMASTERD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/taskmasterd/*
 target_sources(taskmasterctl PRIVATE ${TASKMASTERCTL_SOURCES})
 target_sources(taskmasterd PRIVATE ${TASKMASTERD_SOURCES})
 
-target_link_libraries(taskmasterctl PRIVATE libyaml_cpp)
-target_link_libraries(taskmasterd PRIVATE libyaml_cpp)
+target_link_libraries(taskmasterctl PRIVATE libyaml_cpp libnanomsg)
+target_link_libraries(taskmasterd PRIVATE libyaml_cpp libnanomsg)
 
 install(TARGETS taskmasterd taskmasterctl DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-install(FILES ${CMAKE_SOURCE_DIR}/lib/libyaml-cpp.so DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+install(
+  FILES 
+  ${CMAKE_SOURCE_DIR}/lib/yaml-cpp/libyaml-cpp.so.0.8.0
+  ${CMAKE_SOURCE_DIR}/lib/nanomsg/libnanomsg.so.6.0.1
+  DESTINATION
+  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+)
 
