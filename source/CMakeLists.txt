@@ -66,8 +66,8 @@ target_include_directories(
     ${CMAKE_SOURCE_DIR}/include/libnanomsg.6.0.1
 )
 
-file(GLOB_RECURSE TASKMASTERCTL_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/taskmasterctl/*.cpp")
-file(GLOB_RECURSE TASKMASTERD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/taskmasterd/*.cpp")
+file(GLOB_RECURSE TASKMASTERCTL_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/client/*.cpp")
+file(GLOB_RECURSE TASKMASTERD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/daemon/*.cpp")
 
 target_sources(taskmasterctl PRIVATE ${TASKMASTERCTL_SOURCES})
 target_sources(taskmasterd PRIVATE ${TASKMASTERD_SOURCES})
