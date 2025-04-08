@@ -72,8 +72,8 @@ file(GLOB_RECURSE TASKMASTERD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/daemon/*.cpp"
 target_sources(taskmasterctl PRIVATE ${TASKMASTERCTL_SOURCES})
 target_sources(taskmasterd PRIVATE ${TASKMASTERD_SOURCES})
 
-target_link_libraries(taskmasterctl PRIVATE libyaml_cpp libnanomsg)
-target_link_libraries(taskmasterd PRIVATE libyaml_cpp libnanomsg)
+target_link_libraries(taskmasterctl PRIVATE libyaml_cpp libnanomsg Readline::Readline)
+target_link_libraries(taskmasterd PRIVATE libyaml_cpp libnanomsg Readline::Readline)
 
 install(TARGETS taskmasterd taskmasterctl DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 install(

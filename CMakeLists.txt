@@ -11,6 +11,7 @@ project(
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 # ---- Include guards ----
 
@@ -21,7 +22,8 @@ if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
   )
 endif()
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/")
+find_package(Readline REQUIRED)
 
 #include(FetchContent)
 #include(CTest)
