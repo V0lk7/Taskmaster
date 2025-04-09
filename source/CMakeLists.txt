@@ -41,6 +41,7 @@ target_compile_options(
     -Wall
     -Wextra
     -Werror
+    -gdwarf
 )
 target_compile_options(
   taskmasterd
@@ -53,7 +54,7 @@ target_compile_options(
 target_include_directories(
   taskmasterctl
   PRIVATE 
-    ${CMAKE_SOURCE_DIR}/include/taskmasterctl
+    ${CMAKE_SOURCE_DIR}/include/
     ${CMAKE_SOURCE_DIR}/include/yaml-cpp-0.8.0
     ${CMAKE_SOURCE_DIR}/include/libnanomsg.6.0.1
 )
@@ -61,7 +62,7 @@ target_include_directories(
 target_include_directories(
   taskmasterd
   PRIVATE 
-    ${CMAKE_SOURCE_DIR}/include/taskmasterd
+    ${CMAKE_SOURCE_DIR}/include/
     ${CMAKE_SOURCE_DIR}/include/yaml-cpp-0.8.0
     ${CMAKE_SOURCE_DIR}/include/libnanomsg.6.0.1
 )
