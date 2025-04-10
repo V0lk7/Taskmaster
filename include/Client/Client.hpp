@@ -11,6 +11,7 @@ public:
 
   bool setupClient(std::string const &conf);
   bool run();
+  void cleanUp();
 
   // static void readLineHandlerStatic(char *);
 
@@ -25,6 +26,9 @@ private:
 
   void readlineHandler(std::string);
   static void readLineHandlerStatic(char *);
+
+  bool setUpSigaction();
+  static void signalHandler(int);
 
   void setIsRunning(bool);
 

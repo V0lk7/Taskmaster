@@ -1,9 +1,8 @@
 #include "Client/Client.hpp"
-#include <cstdint>
-#include <cstdlib>
-#include <iostream>
 
+#include <csignal>
 #include <fcntl.h>
+#include <iostream>
 #include <readline/history.h>
 #include <readline/readline.h>
 #include <sys/epoll.h>
@@ -30,7 +29,7 @@ bool Client::setupClient(std::string const &conf) {
   //   return false;
   // }
   (void)conf;
-  if (!setupEpoll() || !setupReadline()) {
+  if (!setUpSigaction() || !setupEpoll() || !setupReadline()) {
     return false;
   }
   if (!addFdToEpoll(STDIN_FILENO, EPOLLIN)) {
@@ -71,6 +70,14 @@ bool Client::run() {
   }
   rl_callback_handler_remove();
   return true;
+}
+
+void Client::cleanUp() {
+  if (_epoll_fd < 0) {
+    close(_epoll_fd);
+  }
+  clear_history();
+  rl_clear_history();
 }
 
 bool Client::setupEpoll() {
@@ -147,6 +154,36 @@ void Client::readLineHandlerStatic(char *line) {
     instance.readlineHandler(strLine);
     free(line);
   }
+}
+bool Client::setUpSigaction() {
+  struct sigaction sa;
+
+  sa.sa_handler = &Client::signalHandler;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = 0;
+
+  if (sigaction(SIGINT, &sa, nullptr) < 0) {
+    std::cerr
+        << "[Error:1] - Client::setUpSigaction - sigaction failed, errno = "
+        << errno << std::endl;
+    return false;
+  }
+  if (sigaction(SIGQUIT, &sa, nullptr) < 0) {
+    std::cerr
+        << "[Error:2] - Client::setUpSigaction - sigaction failed, errno = "
+        << errno << std::endl;
+    return false;
+  }
+
+  return true;
+}
+
+void Client::signalHandler(int signal) {
+  Client &instance = Client::Instance();
+
+  (void)signal;
+  instance.cleanUp();
+  exit(0);
 }
 
 void Client::setIsRunning(bool newVal) {
