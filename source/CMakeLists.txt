@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.31)
+cmake_minimum_required(VERSION 3.28)
 
 project(
   Taskmaster
@@ -14,10 +14,9 @@ add_executable(taskmasterd)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 find_library(TESTLIB NAMES yaml-cpp nanomsg PATHS "${CMAKE_SOURCE_DIR}/lib")
-
-if(NOT TESTLIB)
-  message(FATAL_ERROR "Library not found!")
-endif()
+# if(NOT TESTLIB)
+#   message(FATAL_ERROR "Library not found!")
+# endif()
 
 add_library(libyaml_cpp SHARED IMPORTED)
 set_target_properties(
@@ -52,18 +51,18 @@ target_compile_options(
 
 target_include_directories(
   taskmasterctl
-  PRIVATE 
+  PRIVATE
     ${CMAKE_SOURCE_DIR}/include/taskmasterctl
-    ${CMAKE_SOURCE_DIR}/include/yaml-cpp-0.8.0
-    ${CMAKE_SOURCE_DIR}/include/libnanomsg.6.0.1
+    ${CMAKE_SOURCE_DIR}/include/yaml-cpp
+    ${CMAKE_SOURCE_DIR}/include/libnanomsg
 )
 
 target_include_directories(
   taskmasterd
-  PRIVATE 
+  PRIVATE
     ${CMAKE_SOURCE_DIR}/include/taskmasterd
-    ${CMAKE_SOURCE_DIR}/include/yaml-cpp-0.8.0
-    ${CMAKE_SOURCE_DIR}/include/libnanomsg.6.0.1
+    ${CMAKE_SOURCE_DIR}/include/
+    ${CMAKE_SOURCE_DIR}/include/libnanomsg
 )
 
 file(GLOB_RECURSE TASKMASTERCTL_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/client/*.cpp")
@@ -77,7 +76,7 @@ target_link_libraries(taskmasterd PRIVATE libyaml_cpp libnanomsg Readline::Readl
 
 install(TARGETS taskmasterd taskmasterctl DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 install(
-  FILES 
+  FILES
   ${CMAKE_SOURCE_DIR}/lib/yaml-cpp/libyaml-cpp.so.0.8.0
   ${CMAKE_SOURCE_DIR}/lib/nanomsg/libnanomsg.so.6.0.1
   DESTINATION

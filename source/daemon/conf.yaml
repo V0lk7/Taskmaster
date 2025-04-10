@@ -1,0 +1,59 @@
+unix_http_server:
+  file: ./sock/supervisor.sock
+  chmod: 0700
+taskmasterd:
+  logfile: ./log/supervisord.log
+  loglevel: info
+
+taskmasterctl:
+  serverurl: unix://./sock/supervisor.sock
+
+programs:
+  - name: simple_http
+    command: python3 -m http.server 8080
+    directory: .
+    numprocs: 1
+    autostart: true
+    autorestart: true
+    starttime: 5
+    startretries: 2
+    stopsignal: SIGTERM
+    stopwait: 10
+    environment:
+      FOO: bar
+      ETC: aled
+    umask: 022
+    stdout_logfile: ./logs/http_server.log
+    stderr_logfile: ./logs/http_server.err.log
+
+  - name: tail_logs
+    command: tail -f /var/log/syslog
+    autostart: true
+    autorestart: true
+    numprocs: 1
+    starttime: 5
+    startretries: 2
+    stopsignal: SIGTERM
+    stopwait: 10
+    environment:
+      FOO: bar
+      ETC: aled
+    umask: 022
+    stdout_logfile: logs/tail.log
+    stderr_logfile: logs/tail.err.log
+
+  - name: ping_google
+    command: ping 8.8.8.8
+    autostart: true
+    autorestart: true
+    numprocs: 1
+    starttime: 5
+    startretries: 2
+    stopsignal: SIGKILL
+    stopwait: 10
+    environment:
+      FOO: bar
+      ETC: aled
+    umask: 022
+    stdout_logfile: logs/ping.log
+    stderr_logfile: logs/ping.err.log
