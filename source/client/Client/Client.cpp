@@ -19,6 +19,8 @@ Client::~Client() {
   if (_epoll_fd > -1) {
     (void)close(_epoll_fd);
   }
+  clear_history();
+  rl_clear_history();
 }
 
 bool Client::setupClient(std::string const &conf) {
