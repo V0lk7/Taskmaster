@@ -55,8 +55,8 @@ target_include_directories(
   taskmasterctl
   PRIVATE 
     ${CMAKE_SOURCE_DIR}/include/
-    ${CMAKE_SOURCE_DIR}/include/yaml-cpp-0.8.0
-    ${CMAKE_SOURCE_DIR}/include/libnanomsg.6.0.1
+    ${CMAKE_SOURCE_DIR}/include/yaml-cpp
+    ${CMAKE_SOURCE_DIR}/include/libnanomsg
 )
 
 target_include_directories(
