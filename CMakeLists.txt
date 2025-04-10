@@ -25,10 +25,6 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/")
 find_package(Readline REQUIRED)
 
-#include(FetchContent)
-#include(CTest)
-
 add_subdirectory(source)
-#add_subdirectory(test)
+add_subdirectory(test)
 
-#enable_testing()
