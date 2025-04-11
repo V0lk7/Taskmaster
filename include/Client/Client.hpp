@@ -1,11 +1,22 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
-#include <cstdint>
+#include "Console/Console.hpp"
+#include "Epoll/Epoll.hpp"
+
 #include <string>
 
+#define MAX_EVENTS 2
+#define TIMEOUT 100 // ms
+
+class TestClient;
+
 class Client {
+  friend class TestClient;
+
 public:
+  enum class State { idle, setup, running, error, exit };
+
   static Client &Instance();
   ~Client();
 
@@ -13,24 +24,23 @@ public:
   bool run();
   void cleanUp();
 
-  // static void readLineHandlerStatic(char *);
-
 private:
-  int _epoll_fd = -1;
-  bool _isRunning = false;
+  State _state = State::idle;
 
-  bool setupEpoll();
-  bool setupReadline();
-  bool addFdToEpoll(int const &fd, uint32_t const &);
-  bool makeFdNonBlocking(int const &fd);
-
-  void readlineHandler(std::string);
-  static void readLineHandlerStatic(char *);
+  Console &_console;
+  Epoll _epoll;
 
   bool setUpSigaction();
   static void signalHandler(int);
 
-  void setIsRunning(bool);
+  bool registerCommands();
+
+  bool cmdStatus(std::string const &arg);
+  bool cmdStart(std::string const &arg);
+  bool cmdStop(std::string const &arg);
+  bool cmdRestart(std::string const &arg);
+  bool cmdReload(std::string const &arg);
+  bool cmdQuit();
 
   Client();
   Client(Client &) = delete;
