@@ -67,7 +67,10 @@ std::vector<Process> parsingProcess(YAML::Node process) {
 	  throw std::runtime_error("Error: 'command' is empty.");
 	}
 	YAML::Node directory = process["directory"];
-	
+	if (!directory) {
+	  syslog(LOG_ERR, "Error: 'directory' not found in 'process'.");
+	  throw std::runtime_error("Error: 'directory' not found in 'process'.");
+	}
 }
 
 int parsingFile(std::string config_file) {
