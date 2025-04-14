@@ -2,15 +2,38 @@
 #define LOG_HPP
 
 #include <string>
+#include <fstream>
 #include <syslog.h>
+#include <iostream>
+#include <stdexcept>
 
-struct Log {
-//   enum class LogLvl { info, warning, error, debug };
+class Log {
+public:
+	enum class LogLevel {
+		ERR,
+		WARNING,
+		NOTICE,
+		INFO,
+		DEBUG
+	};
 
-  std::string _filename;
-  int _logFd;
+	enum class Type {
+		STDOUT,
+		STDERR,
+		SYSLOG,
+		FILE
+	};
 
-//   LogLvl _logLvl;
+	Log(std::string name, Type type, LogLevel level, const std::string logfile);
+	~Log();
+	void doLog(const std::string &message);
+	int convertLogLevelToSyslog();
+
+private:
+	std::string name;
+	Type type;
+	LogLevel level;
+	std::string logFile;
 };
 
 #endif

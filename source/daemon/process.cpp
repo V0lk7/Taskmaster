@@ -5,8 +5,7 @@ Process::Process(const std::string &name, const std::string &command, const std:
 		int startdelay, int restartretry, int stopsignal, int stoptimeout,
 		bool discardstdout, bool discardstderr,
 		const std::string &stdoutfile, const std::string &stderrfile,
-		mode_t umask, std::map<std::string, std::string> env)
-	: _name(name), _state(State::STOPPED), _command(command), _workdir(workdir),
+		mode_t umask, std::map<std::string, std::string> env) : _name(name), _state(State::STOPPED), _command(command), _workdir(workdir),
 	  _nbprocess(nbprocess), _autostart(autostart), _restart(restart),
 	  _exitcode(exitcode), _startdelay(startdelay), _restartretry(restartretry),
 	  _stopsignal(stopsignal), _stoptimeout(stoptimeout),
