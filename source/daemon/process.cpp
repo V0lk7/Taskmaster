@@ -60,8 +60,8 @@ bool Process::getAutostart() const {
 Process::Restart Process::getRestart() const {
 	return this->_restart;
 }
-std::vector<int> Process::getExitcode() const {
-	return this->_exitcode;
+std::vector<int> Process::getExitcodes() const {
+	return this->_exitcodes;
 }
 int Process::getStartdelay() const {
 	return this->_startdelay;
@@ -84,18 +84,6 @@ void Process::doLog(const std::string &message, Log::LogLevel level) {
 		if (log.getLogLevel() == level) {
 			log.doLog(message);
 		}
-	}
-}
-
-Process::Restart Process::convertStringToRestart(const std::string &str) {
-	if (str == "always") {
-		return Restart::ALWAYS;
-	} else if (str == "on-failure") {
-		return Restart::ON_FAILURE;
-	} else if (str == "never") {
-		return Restart::NEVER;
-	} else {
-		throw std::invalid_argument("Invalid restart option");
 	}
 }
 
@@ -126,5 +114,17 @@ std::string Process::convertStateToString(State state) {
 			return "EXITED";
 		default:
 			throw std::invalid_argument("Invalid state");
+	}
+}
+
+Process::Restart convertStringToRestart(const std::string &str) {
+	if (str == "always") {
+		return Process::Restart::ALWAYS;
+	} else if (str == "on-failure") {
+		return Process::Restart::ON_FAILURE;
+	} else if (str == "never") {
+		return Process::Restart::NEVER;
+	} else {
+		throw std::invalid_argument("Invalid restart option");
 	}
 }

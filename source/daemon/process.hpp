@@ -38,7 +38,7 @@ class Process {
 		int getNbprocess() const;
 		bool getAutostart() const;
 		Restart getRestart() const;
-		std::vector<int> getExitcode() const;
+		std::vector<int> getExitcodes() const;
 		int getStartdelay() const;
 		int getRestartretry() const;
 		int getStopsignal() const;
@@ -47,11 +47,10 @@ class Process {
 
 
 		void doLog(const std::string &message, Log::LogLevel level);
-		Restart convertStringToRestart(const std::string &str);
 		std::string convertRestartToString(Restart restart);
 		std::string convertStateToString(State state);
 
-	private:
+		private:
 		std::string _name;
 		State _state;
 		std::string _command;
@@ -69,6 +68,9 @@ class Process {
 		mode_t _umask; //The umask to set for the process
 		std::map<std::string, std::string> _env; //Environment variables to set for the process
 		std::vector<Log> _logs; //Logs for the process
-};
+	};
+
+Process::Restart convertStringToRestart(const std::string &str);
 
 #endif
+

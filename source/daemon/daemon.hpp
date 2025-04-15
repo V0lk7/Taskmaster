@@ -3,8 +3,8 @@
 
 #include <string>
 #include <vector>
-#include "./log.hpp"
-#include "./process.hpp"
+#include "log.hpp"
+#include "process.hpp"
 
 class Daemon {
 	public:
