@@ -35,12 +35,12 @@ private:
 
   bool registerCommands();
 
-  bool cmdStatus(std::string const &arg);
-  bool cmdStart(std::string const &arg);
-  bool cmdStop(std::string const &arg);
-  bool cmdRestart(std::string const &arg);
-  bool cmdReload(std::string const &arg);
-  bool cmdQuit();
+  void cmdStatus(std::vector<std::string> &args);
+  void cmdStart(std::vector<std::string> &args);
+  void cmdStop(std::vector<std::string> &args);
+  void cmdRestart(std::vector<std::string> &args);
+  void cmdReload();
+  void cmdQuit();
 
   Client();
   Client(Client &) = delete;

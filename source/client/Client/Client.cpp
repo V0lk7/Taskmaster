@@ -37,40 +37,30 @@ bool Client::setupClient(std::string const &conf) {
 
 bool Client::registerCommands() {
   Console::CommandHandler status = [this](std::vector<std::string> &args) {
-    (void)args;
-    (void)this;
     std::cout << "Status has been called." << std::endl;
-    // this->cmdStatus(arg);
+    this->cmdStatus(args);
   };
   Console::CommandHandler start = [this](std::vector<std::string> &args) {
-    (void)args;
-    (void)this;
     std::cout << "Start has been called." << std::endl;
-    // this->cmdStart(arg);
+    this->cmdStart(args);
   };
   Console::CommandHandler stop = [this](std::vector<std::string> &args) {
-    (void)args;
-    (void)this;
     std::cout << "stop has been called." << std::endl;
-    // this->cmdStop(arg);
+    this->cmdStop(args);
   };
   Console::CommandHandler restart = [this](std::vector<std::string> &args) {
-    (void)args;
-    (void)this;
     std::cout << "Restart has been called." << std::endl;
-    // this->cmdRestart(arg);
+    this->cmdRestart(args);
   };
   Console::CommandHandler reload = [this](std::vector<std::string> &args) {
     (void)args;
-    (void)this;
     std::cout << "Reload has been called." << std::endl;
-    // this->cmdReload(arg);
+    this->cmdReload();
   };
   Console::CommandHandler quit = [this](std::vector<std::string> &args) {
     (void)args;
     std::cout << "Quit has been called." << std::endl;
-    cleanUp();
-    exit(0);
+    this->cmdQuit();
   };
 
   if (!_console.registerCmd("status", status) ||
@@ -83,6 +73,17 @@ bool Client::registerCommands() {
   }
 
   return true;
+}
+
+void Client::cmdStatus(std::vector<std::string> &args) { (void)args; }
+void Client::cmdStart(std::vector<std::string> &args) { (void)args; }
+void Client::cmdStop(std::vector<std::string> &args) { (void)args; }
+void Client::cmdRestart(std::vector<std::string> &args) { (void)args; }
+void Client::cmdReload() {}
+void Client::cmdQuit() {
+  std::cout << "Quit has been called." << std::endl;
+  cleanUp();
+  exit(0);
 }
 
 bool Client::run() {
