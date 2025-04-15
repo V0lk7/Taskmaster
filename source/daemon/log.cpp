@@ -1,10 +1,10 @@
 #include "log.hpp"
 
 Log::Log(std::string name, Type type, LogLevel level, const std::string logfile) {
-	this->name = name;
-	this->type = type;
-	this->level = level;
-	this->logFile = logfile;
+	this->_name = name;
+	this->_type = type;
+	this->_level = level;
+	this->_logFile = logfile;
 
 	if (type == Type::SYSLOG) {
 		openlog(name.c_str(), LOG_PID | LOG_CONS, LOG_DAEMON);
@@ -23,8 +23,12 @@ Log::~Log() {
 	// Destructor implementation
 }
 
+Log::LogLevel Log::getLogLevel() {
+	return this->_level;
+}
+
 void Log::doLog(const std::string &message) {
-	switch (this->type) {
+	switch (this->_type) {
 		case Type::STDOUT:
 			std::cout << message << std::endl;
 			break;
@@ -36,7 +40,7 @@ void Log::doLog(const std::string &message) {
 			break;
 		case Type::FILE:
 			{
-				std::ofstream logFile(this->logFile, std::ios_base::app);
+				std::ofstream logFile(this->_logFile, std::ios_base::app);
 				if (logFile.is_open()) {
 					logFile << message << std::endl;
 					logFile.close();
@@ -49,7 +53,7 @@ void Log::doLog(const std::string &message) {
 }
 
 int Log::convertLogLevelToSyslog() {
-	switch (this->level) {
+	switch (this->_level) {
 		case LogLevel::ERR:
 			return LOG_ERR;
 		case LogLevel::WARNING:

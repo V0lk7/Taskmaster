@@ -26,14 +26,17 @@ public:
 
 	Log(std::string name, Type type, LogLevel level, const std::string logfile);
 	~Log();
+
+	LogLevel getLogLevel();
+
 	void doLog(const std::string &message);
 	int convertLogLevelToSyslog();
 
 private:
-	std::string name;
-	Type type;
-	LogLevel level;
-	std::string logFile;
+	std::string _name;
+	Type _type;
+	LogLevel _level;
+	std::string _logFile;
 };
 
 #endif
