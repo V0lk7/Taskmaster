@@ -1,7 +1,10 @@
 #include "Client/Console/Console.hpp"
+#include "common/Utils.hpp"
 #include <iostream>
 #include <readline/history.h>
 #include <readline/readline.h>
+#include <string>
+#include <vector>
 
 Console &Console::Instance() {
   static Console _instance;
@@ -9,7 +12,10 @@ Console &Console::Instance() {
   return _instance;
 }
 
-Console::Console() { rl_callback_handler_install(">>>", &Console::handler); }
+Console::Console() {
+  rl_attempted_completion_function = &Console::completionHook;
+  rl_callback_handler_install(">>>", &Console::handler);
+}
 
 Console::~Console() {}
 
@@ -22,11 +28,19 @@ void Console::cleanUp() {
 void Console::handler(char *line) {
   Console &instance = Console::Instance();
   CommandHandler function;
+  CommandMap const &commands = instance.getCommands();
+  CommandMap::const_iterator it;
+  std::vector<std::string> tokens;
 
   if (!line) {
     // Do something here
-    function = instance.getCommands().find("quit")->second;
-    function("");
+    it = commands.find("quit");
+
+    if (it == commands.cend()) {
+      return;
+    }
+    function = it->second;
+    function(tokens);
   } else {
     std::string str(line);
     free(line);
@@ -36,10 +50,22 @@ void Console::handler(char *line) {
     if (!str.empty()) {
       add_history(str.c_str());
     }
-    std::cout << str << std::endl;
-    rl_replace_line("", 0);
-    rl_on_new_line();
-    // Launch CommandHandler function here
+
+    tokens = Utils::split(str, " ");
+
+    if (!tokens.empty()) {
+      it = commands.find(tokens[0]);
+
+      if (it == commands.cend()) {
+        std::cout << "Command not found!" << std::endl;
+      } else {
+        it->second(tokens);
+      }
+
+      rl_replace_line("", 0);
+      rl_on_new_line();
+      // Launch CommandHandler function here
+    }
   }
 }
 
@@ -56,23 +82,26 @@ bool Console::registerCmd(const std::string &name, CommandHandler handler) {
 void Console::readCharRead() { rl_callback_read_char(); }
 
 char *Console::commandGenerator(const char *text, int state) {
-  static std::map<std::string, CommandHandler>::const_iterator it;
-  static std::map<std::string, CommandHandler>::const_iterator end;
-  static size_t len;
+  static std::vector<std::string> matches;
+  static size_t matchIndex;
 
-  auto commands = Console::Instance().getCommands();
   if (state == 0) {
-    it = commands.cbegin();
-    end = commands.cend();
-    len = strlen(text);
+    matches.clear();
+    matchIndex = 0;
+
+    const auto &commands = Console::Instance().getCommands();
+    size_t len = strlen(text);
+
+    for (const auto &pair : commands) {
+      if (pair.first.compare(0, len, text) == 0) {
+        matches.push_back(pair.first);
+      }
+    }
   }
 
-  while (it != end) {
-    const std::string &cmd = it->first;
-    ++it;
-
-    if (cmd.compare(0, len, text) == 0)
-      return strdup(cmd.c_str());
+  if (matchIndex < matches.size()) {
+    // rl_completion_matches attend un strdup() car elle free le résultat
+    return strdup(matches[matchIndex++].c_str());
   }
 
   return nullptr;

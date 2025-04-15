@@ -3,6 +3,7 @@
 #include <csignal>
 #include <iostream>
 #include <unistd.h>
+#include <vector>
 
 Client &Client::Instance() {
   static Client _instance;
@@ -35,38 +36,38 @@ bool Client::setupClient(std::string const &conf) {
 }
 
 bool Client::registerCommands() {
-  Console::CommandHandler status = [this](std::string arg) {
-    (void)arg;
+  Console::CommandHandler status = [this](std::vector<std::string> &args) {
+    (void)args;
     (void)this;
     std::cout << "Status has been called." << std::endl;
     // this->cmdStatus(arg);
   };
-  Console::CommandHandler start = [this](std::string arg) {
-    (void)arg;
+  Console::CommandHandler start = [this](std::vector<std::string> &args) {
+    (void)args;
     (void)this;
     std::cout << "Start has been called." << std::endl;
     // this->cmdStart(arg);
   };
-  Console::CommandHandler stop = [this](std::string arg) {
-    (void)arg;
+  Console::CommandHandler stop = [this](std::vector<std::string> &args) {
+    (void)args;
     (void)this;
     std::cout << "stop has been called." << std::endl;
     // this->cmdStop(arg);
   };
-  Console::CommandHandler restart = [this](std::string arg) {
-    (void)arg;
+  Console::CommandHandler restart = [this](std::vector<std::string> &args) {
+    (void)args;
     (void)this;
     std::cout << "Restart has been called." << std::endl;
     // this->cmdRestart(arg);
   };
-  Console::CommandHandler reload = [this](std::string arg) {
-    (void)arg;
+  Console::CommandHandler reload = [this](std::vector<std::string> &args) {
+    (void)args;
     (void)this;
     std::cout << "Reload has been called." << std::endl;
     // this->cmdReload(arg);
   };
-  Console::CommandHandler quit = [this](std::string arg) {
-    (void)arg;
+  Console::CommandHandler quit = [this](std::vector<std::string> &args) {
+    (void)args;
     std::cout << "Quit has been called." << std::endl;
     cleanUp();
     exit(0);

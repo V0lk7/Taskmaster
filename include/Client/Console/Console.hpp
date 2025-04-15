@@ -4,10 +4,11 @@
 #include <functional>
 #include <map>
 #include <string>
+#include <vector>
 
 class Console {
 public:
-  using CommandHandler = std::function<void(const std::string &args)>;
+  using CommandHandler = std::function<void(std::vector<std::string> &args)>;
   using CommandMap = std::map<std::string, CommandHandler>;
 
   static Console &Instance();

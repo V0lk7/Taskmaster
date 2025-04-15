@@ -31,6 +31,24 @@ set_target_properties(
   PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/lib/nanomsg/libnanomsg.so.6.0.1
 )
 
+#==================Static lib
+file(GLOB_RECURSE COMMON_SOURCES
+  "${CMAKE_SOURCE_DIR}/source/common/*.cpp"
+)
+
+add_library(common STATIC ${COMMON_SOURCES})
+
+target_compile_options(
+  common
+  PRIVATE
+    -Wall
+    -Wextra
+    -Werror
+    -gdwarf
+)
+
+target_include_directories(common PRIVATE "${CMAKE_SOURCE_DIR}/include/")
+
 #==================Binaries
 target_compile_features(taskmasterctl PUBLIC cxx_std_11)
 target_compile_features(taskmasterd PUBLIC cxx_std_11)
@@ -73,8 +91,8 @@ file(GLOB_RECURSE TASKMASTERD_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/daemon/*.cpp"
 target_sources(taskmasterctl PRIVATE ${TASKMASTERCTL_SOURCES})
 target_sources(taskmasterd PRIVATE ${TASKMASTERD_SOURCES})
 
-target_link_libraries(taskmasterctl PRIVATE libyaml_cpp libnanomsg Readline::Readline)
-target_link_libraries(taskmasterd PRIVATE libyaml_cpp libnanomsg Readline::Readline)
+target_link_libraries(taskmasterctl PRIVATE common libyaml_cpp libnanomsg Readline::Readline)
+target_link_libraries(taskmasterd PRIVATE common libyaml_cpp libnanomsg Readline::Readline)
 
 install(TARGETS taskmasterd taskmasterctl DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 install(
