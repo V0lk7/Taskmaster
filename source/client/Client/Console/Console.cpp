@@ -20,14 +20,17 @@ void Console::cleanUp() {
 }
 
 void Console::handler(char *line) {
-  // Console &instance = Console::Instance();
+  Console &instance = Console::Instance();
+  CommandHandler function;
 
   if (!line) {
     // Do something here
+    function = instance.getCommands().find("quit")->second;
+    function("");
   } else {
     std::string str(line);
     free(line);
-    if (!str.empty() && str.back() == '\n') {
+    if (str.back() == '\n') {
       str.pop_back();
     }
     if (!str.empty()) {

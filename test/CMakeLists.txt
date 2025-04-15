@@ -19,9 +19,32 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(Catch2)
 
+add_library(libyaml_cpp SHARED IMPORTED)
+set_target_properties(
+  libyaml_cpp PROPERTIES
+  IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/lib/yaml-cpp/libyaml-cpp.so.0.8.0
+)
+
+add_library(libnanomsg SHARED IMPORTED)
+set_target_properties(
+  libnanomsg
+  PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/lib/nanomsg/libnanomsg.so.6.0.1
+)
+
+file(GLOB_RECURSE MYLIB_SOURCES
+  "${CMAKE_SOURCE_DIR}/source/common/*.cpp"
+  "${CMAKE_SOURCE_DIR}/source/client/Client/*.cpp"
+  "${CMAKE_SOURCE_DIR}/source/client/Client/Console/*.cpp"
+  "${CMAKE_SOURCE_DIR}/source/client/Client/Epoll/*.cpp"
+)
+
+add_library(myLib STATIC ${MYLIB_SOURCES})
+target_link_libraries(myLib PRIVATE libyaml_cpp libnanomsg Readline::Readline)
+target_include_directories(myLib PUBLIC ${CMAKE_SOURCE_DIR}/include/)
+
 add_executable(tests_client)
 
-target_link_libraries(tests_client PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(tests_client PRIVATE myLib Catch2::Catch2WithMain)
 
 target_compile_options(
   tests_client
@@ -32,7 +55,7 @@ target_compile_options(
 target_include_directories(tests_client PRIVATE ${CMAKE_SOURCE_DIR}/include/)
 target_include_directories(tests_client PRIVATE ${catch2_SOURCE_DIR}/src/)
 
-file(GLOB_RECURSE SOURCES_TESTS "${CMAKE_CURRENT_SOURCE_DIR}/client/*.cpp")
+file(GLOB_RECURSE SOURCES_TESTS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
 target_sources(tests_client PRIVATE ${SOURCES_TESTS})
 

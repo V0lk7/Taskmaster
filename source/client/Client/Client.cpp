@@ -67,9 +67,9 @@ bool Client::registerCommands() {
   };
   Console::CommandHandler quit = [this](std::string arg) {
     (void)arg;
-    (void)this;
     std::cout << "Quit has been called." << std::endl;
-    // this->cmdQuit();
+    cleanUp();
+    exit(0);
   };
 
   if (!_console.registerCmd("status", status) ||
@@ -85,7 +85,6 @@ bool Client::registerCommands() {
 }
 
 bool Client::run() {
-  std::cout << static_cast<int>(_state);
   if (_state == State::idle) {
     _state = State::error;
     std::cerr
