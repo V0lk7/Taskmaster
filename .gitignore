@@ -2,4 +2,5 @@ build
 *.swp
 *.cache
 compile_commands.json
-Testting
+CMakeCache.txt
+CMakeFiles
