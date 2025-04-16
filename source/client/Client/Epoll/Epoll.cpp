@@ -65,3 +65,7 @@ bool Epoll::makeFdNonBlocking(int fd) {
   }
   return true;
 }
+
+void Epoll::insertMessage(std::string const &cmd, std::string const &arg) {
+  _messageQueue.push(std::pair<std::string, std::string>(cmd, arg));
+}

@@ -39,8 +39,8 @@ private:
   void cmdStart(std::vector<std::string> &args);
   void cmdStop(std::vector<std::string> &args);
   void cmdRestart(std::vector<std::string> &args);
-  void cmdReload();
-  void cmdQuit();
+  void cmdReload(std::vector<std::string> &args);
+  void cmdQuit(std::vector<std::string> &args);
 
   Client();
   Client(Client &) = delete;

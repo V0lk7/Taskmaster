@@ -60,6 +60,7 @@ void Console::handler(char *line) {
       if (it == commands.cend()) {
         std::cout << "Command not found!" << std::endl;
       } else {
+        tokens.erase(tokens.begin());
         it->second(tokens);
       }
 

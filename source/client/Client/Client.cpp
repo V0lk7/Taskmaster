@@ -1,4 +1,5 @@
 #include "Client/Client.hpp"
+#include "common/Commands.hpp"
 
 #include <csignal>
 #include <iostream>
@@ -49,20 +50,18 @@ bool Client::registerCommands() {
     this->cmdRestart(args);
   };
   Console::CommandHandler reload = [this](std::vector<std::string> &args) {
-    (void)args;
-    this->cmdReload();
+    this->cmdReload(args);
   };
   Console::CommandHandler quit = [this](std::vector<std::string> &args) {
-    (void)args;
-    this->cmdQuit();
+    this->cmdQuit(args);
   };
 
-  if (!_console.registerCmd("status", status) ||
-      !_console.registerCmd("start", start) ||
-      !_console.registerCmd("stop", stop) ||
-      !_console.registerCmd("restart", restart) ||
-      !_console.registerCmd("reload", reload) ||
-      !_console.registerCmd("quit", quit)) {
+  if (!_console.registerCmd(STATUS, status) ||
+      !_console.registerCmd(START, start) ||
+      !_console.registerCmd(STOP, stop) ||
+      !_console.registerCmd(RESTART, restart) ||
+      !_console.registerCmd(RELOAD, reload) ||
+      !_console.registerCmd(QUIT, quit)) {
     return false;
   }
 
@@ -70,25 +69,66 @@ bool Client::registerCommands() {
 }
 
 void Client::cmdStatus(std::vector<std::string> &args) {
-  (void)args;
   std::cout << "Status has been called." << std::endl;
+  if (args.empty()) {
+    _epoll.insertMessage(STATUS, "");
+  } else {
+    for (std::string const &arg : args) {
+      _epoll.insertMessage(STATUS, arg);
+    }
+  }
+  // call epoll req/rep message
 }
+
 void Client::cmdStart(std::vector<std::string> &args) {
-  (void)args;
+  if (args.empty()) {
+    std::cout << "[start] command doesn\'t take any parameters!" << std::endl;
+  } else {
+    for (std::string const &arg : args) {
+      _epoll.insertMessage(START, arg);
+    }
+    // call epoll req/rep message;
+  }
   std::cout << "Start has been called." << std::endl;
 }
+
 void Client::cmdStop(std::vector<std::string> &args) {
-  (void)args;
-  std::cout << "stop has been called." << std::endl;
+  if (args.empty()) {
+    std::cout << "[stop] command doesn\'t take any parameters!" << std::endl;
+  } else {
+    for (std::string const &arg : args) {
+      _epoll.insertMessage(STOP, arg);
+    }
+    // call epoll req/rep message;
+  }
+  std::cout << "Stop has been called." << std::endl;
 }
+
 void Client::cmdRestart(std::vector<std::string> &args) {
-  (void)args;
+  if (args.empty()) {
+    std::cout << "[restart] command doesn\'t take any parameters!" << std::endl;
+  } else {
+    for (std::string const &arg : args) {
+      _epoll.insertMessage(RESTART, arg);
+    }
+    // call epoll req/rep message;
+  }
   std::cout << "Restart has been called." << std::endl;
 }
-void Client::cmdReload() {
+
+void Client::cmdReload(std::vector<std::string> &args) {
+  if (!args.empty()) {
+    std::cout << "[reload] command doesn\'t take any parameters!" << std::endl;
+    return;
+  }
+  _epoll.insertMessage(RELOAD, "");
   std::cout << "Reload has been called." << std::endl;
 }
-void Client::cmdQuit() {
+void Client::cmdQuit(std::vector<std::string> &args) {
+  if (!args.empty()) {
+    std::cout << "[quit] command doesn\'t take any parameters!" << std::endl;
+    return;
+  }
   std::cout << "Quit has been called." << std::endl;
   cleanUp();
   exit(0);
