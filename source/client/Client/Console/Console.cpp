@@ -37,7 +37,6 @@ void Console::handler(char *line) {
   std::vector<std::string> tokens;
 
   if (!line) {
-    // Do something here
     it = commands.find("quit");
 
     if (it == commands.cend()) {
@@ -48,9 +47,7 @@ void Console::handler(char *line) {
   } else {
     std::string str(line);
     free(line);
-    if (str.back() == '\n') {
-      str.pop_back();
-    }
+    Utils::trim(str);
     if (!str.empty()) {
       add_history(str.c_str());
     }
@@ -68,7 +65,6 @@ void Console::handler(char *line) {
 
       rl_replace_line("", 0);
       rl_on_new_line();
-      // Launch CommandHandler function here
     }
   }
 }
