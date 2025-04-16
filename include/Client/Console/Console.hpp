@@ -24,7 +24,10 @@ private:
   std::string _prompt;
   CommandMap _commands;
 
+  static std::vector<std::string> _processList;
+
   static void handler(char *);
+  static char *argGenerator(const char *, int);
   static char *commandGenerator(const char *, int);
   static char **completionHook(const char *, int, int);
 
