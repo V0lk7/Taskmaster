@@ -144,6 +144,12 @@ void Process::setStdoutfile(const std::string &stdoutfile) {
 void Process::setStderrfile(const std::string &stderrfile) {
 	this->_stderrfile = stderrfile;
 }
+void Process::setUmask(mode_t umask) {
+	this->_umask = umask;
+}
+mode_t Process::getUmask() const {
+	return this->_umask;
+}
 
 void Process::doLog(const std::string &message, Log::LogLevel level) {
 	for (auto &log : this->_logs) {

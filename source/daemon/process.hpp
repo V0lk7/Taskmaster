@@ -63,6 +63,8 @@ class Process {
 		void setStderrfile(const std::string &stderrfile);
 		std::map<std::string, std::string> getEnv() const;
 		void addEnv(const std::string &key, const std::string &value);
+		void setUmask(mode_t umask);
+		mode_t getUmask() const;
 
 		void doLog(const std::string &message, Log::LogLevel level);
 		std::string convertRestartToString(Restart restart);
