@@ -1,5 +1,8 @@
 #include "Client/Console/Console.hpp"
+#include "common/Commands.hpp"
 #include "common/Utils.hpp"
+
+#include <cstring>
 #include <iostream>
 #include <readline/history.h>
 #include <readline/readline.h>
@@ -18,6 +21,7 @@ Console &Console::Instance() {
 
 Console::Console() {
   rl_attempted_completion_function = &Console::completionHook;
+
   rl_callback_handler_install(">>> ", &Console::handler);
 }
 
@@ -34,7 +38,7 @@ void Console::handler(char *line) {
   CommandHandler function;
   CommandMap const &commands = instance.getCommands();
   CommandMap::const_iterator it;
-  std::vector<std::string> tokens;
+  std::vector<std::string> tokens = {};
 
   if (!line) {
     it = commands.find("quit");
@@ -47,6 +51,7 @@ void Console::handler(char *line) {
   } else {
     std::string str(line);
     free(line);
+
     Utils::trim(str);
     if (!str.empty()) {
       add_history(str.c_str());
@@ -92,7 +97,16 @@ char **Console::completionHook(const char *text, int start, int end) {
     std::string buffer(rl_line_buffer);
     std::string cmd = buffer.substr(0, buffer.find(' '));
 
-    matches = rl_completion_matches(text, Console::argGenerator);
+    if (cmd == RELOAD || cmd == QUIT) {
+      matches = nullptr;
+    } else {
+      matches = rl_completion_matches(text, Console::argGenerator);
+    }
+  }
+  if (matches == nullptr) {
+    matches = (char **)malloc(2 * sizeof(char *));
+    matches[0] = strdup("");
+    matches[1] = nullptr;
   }
   return matches;
 }

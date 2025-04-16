@@ -130,8 +130,7 @@ void Client::cmdQuit(std::vector<std::string> &args) {
     return;
   }
   std::cout << "Quit has been called." << std::endl;
-  cleanUp();
-  exit(0);
+  _state = State::exit;
 }
 
 bool Client::run() {
