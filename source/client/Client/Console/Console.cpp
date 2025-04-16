@@ -14,7 +14,7 @@ Console &Console::Instance() {
 
 Console::Console() {
   rl_attempted_completion_function = &Console::completionHook;
-  rl_callback_handler_install(">>>", &Console::handler);
+  rl_callback_handler_install(">>> ", &Console::handler);
 }
 
 Console::~Console() {}

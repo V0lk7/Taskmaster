@@ -37,29 +37,23 @@ bool Client::setupClient(std::string const &conf) {
 
 bool Client::registerCommands() {
   Console::CommandHandler status = [this](std::vector<std::string> &args) {
-    std::cout << "Status has been called." << std::endl;
     this->cmdStatus(args);
   };
   Console::CommandHandler start = [this](std::vector<std::string> &args) {
-    std::cout << "Start has been called." << std::endl;
     this->cmdStart(args);
   };
   Console::CommandHandler stop = [this](std::vector<std::string> &args) {
-    std::cout << "stop has been called." << std::endl;
     this->cmdStop(args);
   };
   Console::CommandHandler restart = [this](std::vector<std::string> &args) {
-    std::cout << "Restart has been called." << std::endl;
     this->cmdRestart(args);
   };
   Console::CommandHandler reload = [this](std::vector<std::string> &args) {
     (void)args;
-    std::cout << "Reload has been called." << std::endl;
     this->cmdReload();
   };
   Console::CommandHandler quit = [this](std::vector<std::string> &args) {
     (void)args;
-    std::cout << "Quit has been called." << std::endl;
     this->cmdQuit();
   };
 
@@ -75,11 +69,25 @@ bool Client::registerCommands() {
   return true;
 }
 
-void Client::cmdStatus(std::vector<std::string> &args) { (void)args; }
-void Client::cmdStart(std::vector<std::string> &args) { (void)args; }
-void Client::cmdStop(std::vector<std::string> &args) { (void)args; }
-void Client::cmdRestart(std::vector<std::string> &args) { (void)args; }
-void Client::cmdReload() {}
+void Client::cmdStatus(std::vector<std::string> &args) {
+  (void)args;
+  std::cout << "Status has been called." << std::endl;
+}
+void Client::cmdStart(std::vector<std::string> &args) {
+  (void)args;
+  std::cout << "Start has been called." << std::endl;
+}
+void Client::cmdStop(std::vector<std::string> &args) {
+  (void)args;
+  std::cout << "stop has been called." << std::endl;
+}
+void Client::cmdRestart(std::vector<std::string> &args) {
+  (void)args;
+  std::cout << "Restart has been called." << std::endl;
+}
+void Client::cmdReload() {
+  std::cout << "Reload has been called." << std::endl;
+}
 void Client::cmdQuit() {
   std::cout << "Quit has been called." << std::endl;
   cleanUp();
