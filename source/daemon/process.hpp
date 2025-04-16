@@ -6,6 +6,7 @@
 #include <vector>
 #include <sys/types.h>
 #include <stdexcept>
+#include <sys/signal.h>
 #include "log.hpp"
 
 class Process {
@@ -18,37 +19,56 @@ class Process {
 			EXITED
 		};
 		enum class Restart {
-			ALWAYS,
-			ON_FAILURE,
-			NEVER
+			TRUE,
+			UNEXPECTED,
+			FALSE
 		};
+
+
 
 		Process(const std::string &name, const std::string &command, const std::string &workdir,
 				int nbprocess, bool autostart, Restart restart, std::vector<int> exitcodes,
 				int startdelay, int restartretry, int stopsignal, int stoptimeout,
 				const std::string &stdoutfile, const std::string &stderrfile,
 				mode_t umask, std::map<std::string, std::string> env);
+		Process(const std::string &name, const std::string &command);
 		~Process();
 
 		void setState(State state);
 		State getState() const;
+		void setName(const std::string &name);
 		std::string getName() const;
+		void setCommand(const std::string &command);
 		std::string getCommand() const;
+		void setWorkdir(const std::string &workdir);
 		std::string getWorkdir() const;
+		void setNbprocess(int nbprocess);
 		int getNbprocess() const;
+		void setAutostart(bool autostart);
 		bool getAutostart() const;
+		void setRestart(Restart restart);
 		Restart getRestart() const;
+		void setExitcodes(std::vector<int> exitcodes);
 		std::vector<int> getExitcodes() const;
+		void setStartdelay(int startdelay);
 		int getStartdelay() const;
+		void setRestartretry(int restartretry);
 		int getRestartretry() const;
+		void setStopsignal(int stopsignal);
+		void setStopsignalString(const std::string &stopsignal);
 		int getStopsignal() const;
+		void setStoptimeout(int stoptimeout);
 		int getStoptimeout() const;
+		void setStdoutfile(const std::string &stdoutfile);
+		void setStderrfile(const std::string &stderrfile);
 		std::map<std::string, std::string> getEnv() const;
-
+		void addEnv(const std::string &key, const std::string &value);
 
 		void doLog(const std::string &message, Log::LogLevel level);
 		std::string convertRestartToString(Restart restart);
 		std::string convertStateToString(State state);
+		std::string convertStopsignalToString(int signal);
+		int convertStringToStopsignal(const std::string &str);
 
 		private:
 		std::string _name;
