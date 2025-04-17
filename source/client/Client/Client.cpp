@@ -158,7 +158,6 @@ bool Client::run() {
       }
     }
   }
-  _console.cleanUp();
   return true;
 }
 

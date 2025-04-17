@@ -41,6 +41,7 @@ void Console::handler(char *line) {
     }
     function = it->second;
     function(tokens);
+    rl_callback_handler_remove();
   } else {
     std::string str(line);
     free(line);
@@ -60,10 +61,9 @@ void Console::handler(char *line) {
       } else {
         tokens.erase(tokens.begin());
         it->second(tokens);
+        rl_replace_line("", 0);
+        rl_on_new_line();
       }
-
-      rl_replace_line("", 0);
-      rl_on_new_line();
     }
   }
 }
@@ -92,7 +92,7 @@ char **Console::completionHook(const char *text, int start, int end) {
 
     if (cmd == RELOAD || cmd == QUIT) {
       matches = nullptr;
-    } else {
+    } else if (cmd == STATUS || cmd == START || cmd == STOP || cmd == RESTART) {
       matches = rl_completion_matches(text, Console::argGenerator);
     }
   }
@@ -101,6 +101,7 @@ char **Console::completionHook(const char *text, int start, int end) {
     matches[0] = strdup("");
     matches[1] = nullptr;
   }
+
   return matches;
 }
 
