@@ -9,9 +9,6 @@ void send_syslog(int log_level, const std::string& message) {
 std::string parsingSocket(YAML::Node unix_http_server)
 {
 	YAML::Node path = unix_http_server["file"];
-	if (!path) {
-		throw std::runtime_error("Error: 'file' not found in 'unix_http_server'.");
-	}
 	std::string socket_path = path.as<std::string>();
 	return socket_path;
 }
@@ -53,7 +50,8 @@ int parsingFile(std::string config_file) {
 	try {
 		std::string socket_path = parsingSocket(config["unix_http_server"]);
 		Log log_info = parsingTaskmasterd(config["taskmasterd"]);
-		std::vector<Process> processes = parsingProcess(config["process"]);
+		std::vector<Process> processes = parsingProcess(config["programs"]);
+		Daemon daemon(socket_path, log_info);
 
 	}
 	catch (const std::runtime_error& e) {
