@@ -1,7 +1,7 @@
 #ifndef EPOLL_HPP
 #define EPOLL_HPP
 
-#include "pch.hpp"
+#include "pch.hpp" // IWYU pragma: keep
 
 class Epoll {
 public:

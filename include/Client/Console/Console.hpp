@@ -1,7 +1,7 @@
 #ifndef CONSOLE_HPP
 #define CONSOLE_HPP
 
-#include "pch.hpp"
+#include "pch.hpp" // IWYU pragma: keep
 
 class Console {
 public:

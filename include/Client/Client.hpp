@@ -1,7 +1,7 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
-#include "pch.hpp"
+#include "pch.hpp" // IWYU pragma: keep
 
 #include "Epoll/Epoll.hpp"
 
