@@ -1,15 +1,14 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
-#include "Console/Console.hpp"
-#include "Epoll/Epoll.hpp"
+#include "pch.hpp"
 
-#include <string>
+#include "Epoll/Epoll.hpp"
 
 #define MAX_EVENTS 2
 #define TIMEOUT 100 // ms
 
-class TestClient;
+class Console;
 
 class Client {
   friend class TestClient;

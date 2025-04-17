@@ -1,10 +1,6 @@
 #include "Client/Client.hpp"
+#include "Client/Console/Console.hpp"
 #include "common/Commands.hpp"
-
-#include <csignal>
-#include <iostream>
-#include <unistd.h>
-#include <vector>
 
 Client &Client::Instance() {
   static Client _instance;

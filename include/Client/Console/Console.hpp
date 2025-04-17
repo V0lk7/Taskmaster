@@ -1,10 +1,7 @@
 #ifndef CONSOLE_HPP
 #define CONSOLE_HPP
 
-#include <functional>
-#include <map>
-#include <string>
-#include <vector>
+#include "pch.hpp"
 
 class Console {
 public:

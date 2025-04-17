@@ -1,10 +1,5 @@
 #include "Client/Epoll/Epoll.hpp"
 
-#include <fcntl.h>
-#include <iostream>
-#include <sys/epoll.h>
-#include <unistd.h>
-
 Epoll::Epoll() {}
 
 Epoll::~Epoll() { cleanUp(); };

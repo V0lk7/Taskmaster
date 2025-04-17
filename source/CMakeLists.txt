@@ -94,6 +94,8 @@ target_sources(taskmasterd PRIVATE ${TASKMASTERD_SOURCES})
 target_link_libraries(taskmasterctl PRIVATE common libyaml_cpp libnanomsg Readline::Readline)
 target_link_libraries(taskmasterd PRIVATE common libyaml_cpp libnanomsg Readline::Readline)
 
+target_precompile_headers(taskmasterctl PRIVATE "${CMAKE_SOURCE_DIR}/include/pch.hpp")
+
 install(TARGETS taskmasterd taskmasterctl DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 install(
   FILES 

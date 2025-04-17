@@ -2,16 +2,9 @@
 #include "common/Commands.hpp"
 #include "common/Utils.hpp"
 
-#include <cstring>
-#include <iostream>
-#include <readline/history.h>
-#include <readline/readline.h>
-#include <sstream>
-#include <string>
-#include <unordered_set>
-#include <vector>
-
-std::vector<std::string> Console::_processList = {"arg1", "arg2", "arg3"};
+std::vector<std::string> Console::_processList = {
+    "arg1", "arg2",
+    "arg3"}; // TODO modify this list when status is first called
 
 Console &Console::Instance() {
   static Console _instance;
@@ -124,7 +117,7 @@ char *Console::argGenerator(const char *text, int state) {
     // Extract already-used args from rl_line_buffer
     std::istringstream iss(rl_line_buffer);
     std::string word, command;
-    iss >> command; // Skip command (e.g., "start")
+    iss >> command; // Skip command
 
     std::unordered_set<std::string> usedArgs;
     while (iss >> word) {

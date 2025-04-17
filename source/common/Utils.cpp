@@ -1,5 +1,4 @@
 #include "common/Utils.hpp"
-#include <algorithm>
 
 std::vector<std::string> Utils::split(std::string const &input,
                                       std::string const &delimiter) {

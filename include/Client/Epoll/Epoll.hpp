@@ -1,10 +1,7 @@
 #ifndef EPOLL_HPP
 #define EPOLL_HPP
 
-#include <queue>
-#include <string>
-#include <sys/epoll.h>
-#include <utility>
+#include "pch.hpp"
 
 class Epoll {
 public:
