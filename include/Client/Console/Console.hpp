@@ -11,6 +11,8 @@ public:
   static Console &Instance();
   ~Console();
 
+  void disableHandler();
+  void enableHandler();
   bool registerCmd(const std::string &, CommandHandler);
   void readCharRead(void);
   void cleanUp();

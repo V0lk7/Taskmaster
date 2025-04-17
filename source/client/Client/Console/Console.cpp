@@ -1,6 +1,7 @@
 #include "Client/Console/Console.hpp"
 #include "common/Commands.hpp"
 #include "common/Utils.hpp"
+#include <readline/readline.h>
 
 std::vector<std::string> Console::_processList = {
     "arg1", "arg2",
@@ -19,6 +20,12 @@ Console::Console() {
 }
 
 Console::~Console() {}
+
+void Console::disableHandler() { rl_callback_handler_remove(); }
+
+void Console::enableHandler() {
+  rl_callback_handler_install(">>> ", &Console::handler);
+}
 
 void Console::cleanUp() {
   rl_callback_handler_remove();
@@ -57,13 +64,13 @@ void Console::handler(char *line) {
       it = commands.find(tokens[0]);
 
       if (it == commands.cend()) {
-        std::cout << "Command not found!" << std::endl;
+        std::cout << "*** Unknown syntax: " << tokens[0] << std::endl;
       } else {
         tokens.erase(tokens.begin());
         it->second(tokens);
-        rl_replace_line("", 0);
-        rl_on_new_line();
       }
+      rl_replace_line("", 0);
+      rl_on_new_line();
     }
   }
 }

@@ -14,7 +14,7 @@ class Client {
   friend class TestClient;
 
 public:
-  enum class State { idle, setup, running, error, exit };
+  enum class State { idle, setup, running, asking, error, exit };
 
   static Client &Instance();
   ~Client();
@@ -40,6 +40,8 @@ private:
   void cmdRestart(std::vector<std::string> &args);
   void cmdReload(std::vector<std::string> &args);
   void cmdQuit(std::vector<std::string> &args);
+
+  bool askUserConfirmation(std::string const &);
 
   Client();
   Client(Client &) = delete;

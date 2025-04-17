@@ -65,7 +65,6 @@ bool Client::registerCommands() {
 }
 
 void Client::cmdStatus(std::vector<std::string> &args) {
-  std::cout << "Status has been called." << std::endl;
   if (args.empty()) {
     _epoll.insertMessage(STATUS, "");
   } else {
@@ -78,54 +77,83 @@ void Client::cmdStatus(std::vector<std::string> &args) {
 
 void Client::cmdStart(std::vector<std::string> &args) {
   if (args.empty()) {
-    std::cout << "[start] command doesn\'t take any parameters!" << std::endl;
+    std::cout << "Error: start requires a process name\n"
+              << "start <name>            Start a process\n"
+              << "start <name> <name>     Start multiple processes or groups."
+              << std::endl;
   } else {
     for (std::string const &arg : args) {
       _epoll.insertMessage(START, arg);
     }
     // call epoll req/rep message;
   }
-  std::cout << "Start has been called." << std::endl;
 }
 
 void Client::cmdStop(std::vector<std::string> &args) {
   if (args.empty()) {
-    std::cout << "[stop] command doesn\'t take any parameters!" << std::endl;
+    std::cout << "Error: stop requires a process name\n"
+              << "stop <name>            Stop a process\n"
+              << "stop <name> <name>     Stop multiple processes or groups."
+              << std::endl;
   } else {
     for (std::string const &arg : args) {
       _epoll.insertMessage(STOP, arg);
     }
     // call epoll req/rep message;
   }
-  std::cout << "Stop has been called." << std::endl;
 }
 
 void Client::cmdRestart(std::vector<std::string> &args) {
   if (args.empty()) {
-    std::cout << "[restart] command doesn\'t take any parameters!" << std::endl;
+    std::cout
+        << "Error: restart requires a process name\n"
+        << "restart <name>            Restart a process\n"
+        << "restart <name> <name>     Restart multiple processes or groups."
+        << std::endl;
   } else {
     for (std::string const &arg : args) {
       _epoll.insertMessage(RESTART, arg);
     }
     // call epoll req/rep message;
   }
-  std::cout << "Restart has been called." << std::endl;
 }
 
 void Client::cmdReload(std::vector<std::string> &args) {
   if (!args.empty()) {
-    std::cout << "[reload] command doesn\'t take any parameters!" << std::endl;
+    std::cout << "Error: reload accepts no arguments\n"
+              << "reload          Restart the remote supervisord." << std::endl;
     return;
   }
-  _epoll.insertMessage(RELOAD, "");
-  std::cout << "Reload has been called." << std::endl;
+  if (askUserConfirmation("Really restart the remote supervisord process ")) {
+    _console.disableHandler();
+    _epoll.insertMessage(RELOAD, "");
+    _console.enableHandler();
+  }
 }
-void Client::cmdQuit(std::vector<std::string> &args) {
-  if (!args.empty()) {
-    std::cout << "[quit] command doesn\'t take any parameters!" << std::endl;
-    return;
+
+bool Client::askUserConfirmation(std::string const &question) {
+  std::string fullPrompt = question + "y/N? ";
+
+  _state = State::asking;
+
+  std::cout << "before readline" << std::endl;
+  char *line = readline(fullPrompt.c_str());
+  std::cout << "after readline" << std::endl;
+
+  _state = State::running;
+  if (!line) {
+    return false;
   }
-  std::cout << "Quit has been called." << std::endl;
+
+  std::string input(line);
+  free(line);
+
+  std::transform(input.begin(), input.end(), input.begin(), ::tolower);
+  return (input == "y" || input == "yes");
+}
+
+void Client::cmdQuit(std::vector<std::string> &args) {
+  (void)args;
   _state = State::exit;
 }
 
@@ -145,14 +173,16 @@ bool Client::run() {
 
   struct epoll_event events[MAX_EVENTS];
 
-  while (_state == State::running) {
+  while (_state == State::running || _state == State::asking) {
     int nbrFd = _epoll.waitEvents(events, MAX_EVENTS, TIMEOUT);
 
     for (int i = 0; i < nbrFd; ++i) {
       int fd = events[i].data.fd;
 
       if (fd == STDIN_FILENO) {
-        _console.readCharRead();
+        if (_state != State::asking) {
+          _console.readCharRead();
+        }
       } else {
         continue;
       }
@@ -175,13 +205,13 @@ bool Client::setUpSigaction() {
 
   if (sigaction(SIGINT, &sa, nullptr) < 0) {
     std::cerr
-        << "[Error:1] - Client::setUpSigaction - sigaction failed, errno = "
+        << "[Debug] - Client::setUpSigaction -1- sigaction failed, errno = "
         << errno << std::endl;
     return false;
   }
   if (sigaction(SIGQUIT, &sa, nullptr) < 0) {
     std::cerr
-        << "[Error:2] - Client::setUpSigaction - sigaction failed, errno = "
+        << "[Debug] - Client::setUpSigaction -2- sigaction failed, errno = "
         << errno << std::endl;
     return false;
   }
