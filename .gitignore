@@ -4,3 +4,11 @@ build
 compile_commands.json
 CMakeCache.txt
 CMakeFiles
+
+# Ignorer les symlinks dans lib/nanomsg et lib/yaml-cpp
+lib/nanomsg/libnanomsg.so
+lib/yaml-cpp/libyaml-cpp.so
+
+# Ignorer les fichiers spécifiques pointés par les symlinks, si nécessaire
+lib/nanomsg/libnanomsg.so.6
+lib/yaml-cpp/libyaml-cpp.so.0.8
