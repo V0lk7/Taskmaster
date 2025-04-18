@@ -3,7 +3,7 @@ unix_http_server:
   chmod: 0700
 taskmasterd:
   logfile: ./log/supervisord.log
-  loglevel: info
+  loglevel: INFO
 
 taskmasterctl:
   serverurl: unix://./sock/supervisor.sock
@@ -42,19 +42,3 @@ programs:
     umask: 022
     stdout_logfile: logs/tail.log
     stderr_logfile: logs/tail.err.log
-
-  - name: ping_google
-    command: ping 8.8.8.8
-    autostart: true
-    autorestart: true
-    numprocs: 1
-    starttime: 5
-    startretries: 2
-    stopsignal: SIGKILL
-    stopwait: 10
-    environment:
-      FOO: bar
-      ETC: aled
-    umask: 022
-    stdout_logfile: logs/ping.log
-    stderr_logfile: logs/ping.err.log

@@ -23,13 +23,15 @@ class Daemon {
 		void stopProcess(Process &process);
 		void restartProcess(Process &process);
 		void killProcess(Process &process);
+		void addProcess(Process &process);
+		void removeProcess(Process &process);
 
 	private :
 		std::string socketPath;
 		int socketFd;
 
 		std::vector<Log> loggers;
-		std::vector<Process> processInfos;
+		std::vector<Process> processes;
 };
 
 #endif

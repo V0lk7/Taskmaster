@@ -32,11 +32,13 @@ public:
 	void doLog(const std::string &message);
 	int convertLogLevelToSyslog();
 
-private:
+	private:
 	std::string _name;
 	Type _type;
 	LogLevel _level;
 	std::string _logFile;
 };
+
+Log::LogLevel convertStringToLogLevel(const std::string &str);
 
 #endif

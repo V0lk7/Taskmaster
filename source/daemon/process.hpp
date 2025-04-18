@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <sys/signal.h>
 #include <sys/stat.h>
+#include <cstring>
 #include "log.hpp"
 
 class Process {
@@ -41,7 +42,6 @@ class Process {
 		std::string getName() const;
 		void setPid(int pid);
 		int getPid() const;
-		void setCommand(const std::string &command);
 		std::string getCommand() const;
 		void setWorkdir(const std::string &workdir);
 		std::string getWorkdir() const;
@@ -77,13 +77,13 @@ class Process {
 		void start();
 		void stop();
 		void restart();
-		void kill();
 
 		private:
 		std::string _name;
 		int _pid;
 		State _state;
 		std::string _command;
+		char** _args;
 		std::string _workdir;
 		int _nbprocess; //How many processes to start
 		bool _autostart; //Whether to start this program at launch or not
@@ -98,7 +98,10 @@ class Process {
 		mode_t _umask; //The umask to set for the process
 		std::map<std::string, std::string> _env; //Environment variables to set for the process
 		std::vector<Log> _logs; //Logs for the process
-	};
+
+		char** setArgs(std::string rawCommand);
+		std::string setCommand(std::string rawCommand);
+};
 
 Process::Restart convertStringToRestart(const std::string &str);
 

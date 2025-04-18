@@ -20,7 +20,15 @@ Log::Log(std::string name, Type type, LogLevel level, const std::string logfile)
 }
 
 Log::~Log() {
-	// Destructor implementation
+	if (this->_type == Type::SYSLOG) {
+		closelog();
+	}
+	if (this->_type == Type::FILE) {
+		std::ofstream logFile(this->_logFile, std::ios_base::app);
+		if (logFile.is_open()) {
+			logFile.close();
+		}
+	}
 }
 
 Log::LogLevel Log::getLogLevel() {
@@ -66,5 +74,21 @@ int Log::convertLogLevelToSyslog() {
 			return LOG_DEBUG;
 		default:
 			throw std::invalid_argument("Invalid log level");
+	}
+}
+
+Log::LogLevel convertStringToLogLevel(const std::string &str) {
+	if (str == "ERR") {
+		return Log::LogLevel::ERR;
+	} else if (str == "WARNING") {
+		return Log::LogLevel::WARNING;
+	} else if (str == "NOTICE") {
+		return Log::LogLevel::NOTICE;
+	} else if (str == "INFO") {
+		return Log::LogLevel::INFO;
+	} else if (str == "DEBUG") {
+		return Log::LogLevel::DEBUG;
+	} else {
+		throw std::invalid_argument("Invalid log level string");
 	}
 }

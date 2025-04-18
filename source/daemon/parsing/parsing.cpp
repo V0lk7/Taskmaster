@@ -34,12 +34,10 @@ Log parsingTaskmasterd(YAML::Node taskmasterd) {
 		send_syslog(LOG_ERR, "Error: 'loglevel' is empty.");
 		throw std::runtime_error("Error: 'loglevel' is empty.");
 	}
-	// else
-	//   throw std::runtime_error("Error: Invalid 'loglevel' value.");
-
+	Log::LogLevel level = convertStringToLogLevel(loglevel_str);
+	Log log_info("taskmasterd", Log::Type::FILE, level, logfile_path);
+	return log_info;
 }
-
-
 
 int parsingFile(std::string config_file) {
 	YAML::Node config = YAML::LoadFile(config_file);
@@ -52,7 +50,14 @@ int parsingFile(std::string config_file) {
 		Log log_info = parsingTaskmasterd(config["taskmasterd"]);
 		std::vector<Process> processes = parsingProcess(config["programs"]);
 		Daemon daemon(socket_path, log_info);
-
+		daemon.sendLogs("Daemon started.");
+		for (auto& process : processes) {
+			daemon.addProcess(process);
+			if (process.getAutostart()) {
+				process.start();
+			}
+		}
+		daemon.sendLogs("All processes started.");
 	}
 	catch (const std::runtime_error& e) {
 		std::cerr << "Error: " << e.what() << std::endl;

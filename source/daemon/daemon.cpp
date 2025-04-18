@@ -83,3 +83,35 @@ void Daemon::stopProcess(Process &process)
 		kill(pid, SIGTERM);
 	}
 }
+
+void Daemon::restartProcess(Process &process)
+{
+	// Restart the process
+	this->stopProcess(process);
+	this->startProcess(process);
+}
+
+void Daemon::killProcess(Process &process)
+{
+	// Kill the process
+	int pid = process.getPid();
+	if (pid > 0) {
+		kill(pid, SIGKILL);
+	}
+}
+
+void Daemon::addProcess(Process &process)
+{
+	this->processes.push_back(process);
+}
+
+void Daemon::removeProcess(Process &process)
+{
+	for (auto it = this->processes.begin(); it != this->processes.end(); ++it) {
+		if (it->getName() == process.getName()) {
+			this->processes.erase(it);
+			break;
+		}
+	}
+}
+

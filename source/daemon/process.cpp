@@ -8,7 +8,8 @@ Process::Process(const std::string &name, const std::string &command, const std:
 	this->_name = name;
 	this->_pid = -1;
 	this->_state = State::STOPPED;
-	this->_command = command;
+	this->_command = setCommand(command);
+	this->_args = setArgs(command);
 	this->_workdir = workdir;
 	this->_nbprocess = nbprocess;
 	this->_autostart = autostart;
@@ -37,7 +38,8 @@ Process::Process(const std::string &name, const std::string &command) {
 	this->_name = name;
 	this->_pid = -1;
 	this->_state = State::STOPPED;
-	this->_command = command;
+	this->_command = setCommand(command);
+	this->_args = setArgs(command);
 	this->_workdir = ".";
 	this->_nbprocess = 1;
 	this->_autostart = true;
@@ -58,6 +60,39 @@ Process::Process(const std::string &name, const std::string &command) {
 Process::~Process() {
 }
 
+char **Process::setArgs(std::string rawCommand) {
+	std::string arg;
+	std::vector<std::string> args;
+	size_t pos = 0;
+	while ((pos = rawCommand.find(" ")) != std::string::npos) {
+		arg = rawCommand.substr(0, pos);
+		args.push_back(arg);
+		rawCommand.erase(0, pos + 1);
+	}
+	args.push_back(rawCommand);
+	char **argv = new char *[args.size() + 1];
+	for (size_t i = 0; i < args.size(); ++i) {
+		argv[i] = new char[args[i].length() + 1];
+		strcpy(argv[i], args[i].c_str());
+	}
+	argv[args.size()] = nullptr;
+	return argv;
+}
+
+std::string Process::setCommand(std::string rawCommand) {
+	std::string command = rawCommand;
+	size_t pos = command.find(" ");
+	if (pos != std::string::npos) {
+		this->_command = command.substr(0, pos);
+		command.erase(0, pos + 1);
+	} else {
+		this->_command = command;
+		command.clear();
+	}
+	this->_args = setArgs(command);
+	return this->_command;
+}
+
 void Process::setState(State state) {
 	this->_state = state;
 }
@@ -76,9 +111,6 @@ void Process::setPid(int pid) {
 }
 int Process::getPid() const {
 	return this->_pid;
-}
-void Process::setCommand(const std::string &command) {
-	this->_command = command;
 }
 std::string Process::getCommand() const {
 	return this->_command;
@@ -233,7 +265,7 @@ void Process::start() {
 			return;
 		}
 	}
-	if (this->_umask != -1) {
+	if (this->_umask != (mode_t)-1) {
 		umask(this->_umask);
 	}
 	if (this->_env.size() > 0) {
@@ -241,7 +273,9 @@ void Process::start() {
 			setenv(pair.first.c_str(), pair.second.c_str(), 1);
 		}
 	}
-	execve(this->_command.c_str(), NULL, NULL);
+	setState(State::STARTING);
+	this->_pid = fork();
+	execve(this->_command.c_str(), this->_args, nullptr);
 }
 
 void Process::stop() {
