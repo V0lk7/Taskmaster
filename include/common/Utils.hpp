@@ -1,13 +1,16 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
-#include <string>
-#include <vector>
+#include "pch.hpp"
 
 class Utils {
 public:
   static std::vector<std::string> split(std::string const &input,
                                         std::string const &delimiter);
+
+  static void trim(std::string &s);
+  static void rtrim(std::string &s);
+  static void ltrim(std::string &s);
 
 private:
   Utils() = delete;

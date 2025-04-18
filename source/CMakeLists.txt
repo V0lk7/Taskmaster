@@ -9,26 +9,68 @@ project(
 add_executable(taskmasterctl)
 add_executable(taskmasterd)
 
+# Set the directories for the symlinks
+set(NANOMSG_LIB_DIR ${CMAKE_SOURCE_DIR}/lib/nanomsg)
+set(YAML_CPP_LIB_DIR ${CMAKE_SOURCE_DIR}/lib/yaml-cpp)
+
+# Function to create symlinks if not exist
+function(create_symlink TARGET LINK_NAME)
+    if(NOT EXISTS ${LINK_NAME})
+        message(STATUS "Creating symlink: ${LINK_NAME} -> ${TARGET}")
+        execute_process(
+            COMMAND ${CMAKE_COMMAND} -E create_symlink ${TARGET} ${LINK_NAME}
+            RESULT_VARIABLE symlink_result
+        )
+        if(symlink_result)
+            message(FATAL_ERROR "Failed to create symlink: ${TARGET} -> ${LINK_NAME}")
+        endif()
+    else()
+        message(STATUS "Symlink already exists: ${LINK_NAME}")
+    endif()
+endfunction()
+
+# Create symlinks for nanomsg if not already created
+create_symlink(${NANOMSG_LIB_DIR}/libnanomsg.so.6.0.1 ${NANOMSG_LIB_DIR}/libnanomsg.so)
+create_symlink(${NANOMSG_LIB_DIR}/libnanomsg.so ${NANOMSG_LIB_DIR}/libnanomsg.so.6)
+
+# Create symlinks for yaml-cpp if not already created
+create_symlink(${YAML_CPP_LIB_DIR}/libyaml-cpp.so.0.8.0 ${YAML_CPP_LIB_DIR}/libyaml-cpp.so)
+create_symlink(${YAML_CPP_LIB_DIR}/libyaml-cpp.so ${YAML_CPP_LIB_DIR}/libyaml-cpp.so.0.8)
+
+set_target_properties(taskmasterctl taskmasterd PROPERTIES
+  BUILD_WITH_INSTALL_RPATH TRUE
+  BUILD_RPATH "${CMAKE_SOURCE_DIR}/lib/yaml-cpp;${CMAKE_SOURCE_DIR}/lib/nanomsg"
+  INSTALL_RPATH "${CMAKE_SOURCE_DIR}/lib/yaml-cpp;${CMAKE_SOURCE_DIR}/lib/nanomsg"
+  SKIP_BUILD_RPATH FALSE
+)
+
 #==================Shared library
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-find_library(TESTLIB NAMES yaml-cpp nanomsg PATHS "${CMAKE_SOURCE_DIR}/lib")
+message(DEBUG "${CMAKE_SOURCE_DIR}")
 
-if(NOT TESTLIB)
-  message(FATAL_ERROR "Library not found!")
+find_library(YAMLCPP_LIB NAMES yaml-cpp PATHS "${CMAKE_SOURCE_DIR}/lib/yaml-cpp/")
+find_library(NANOMSG_LIB NAMES nanomsg PATHS "${CMAKE_SOURCE_DIR}/lib/nanomsg/")
+
+if(NOT YAMLCPP_LIB)
+  message(FATAL_ERROR "|${CMAKE_SOURCE_DIR}|yaml-cpp library not found!")
+endif()
+
+if(NOT NANOMSG_LIB)
+  message(FATAL_ERROR "nanomsg library not found!")
 endif()
 
 add_library(libyaml_cpp SHARED IMPORTED)
 set_target_properties(
   libyaml_cpp PROPERTIES
-  IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/lib/yaml-cpp/libyaml-cpp.so.0.8.0
+  IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/lib/yaml-cpp/libyaml-cpp.so
 )
 
 add_library(libnanomsg SHARED IMPORTED)
 set_target_properties(
   libnanomsg
-  PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/lib/nanomsg/libnanomsg.so.6.0.1
+  PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/lib/nanomsg/libnanomsg.so
 )
 
 #==================Static lib
@@ -74,15 +116,15 @@ target_include_directories(
   PRIVATE 
     ${CMAKE_SOURCE_DIR}/include/
     ${CMAKE_SOURCE_DIR}/include/yaml-cpp
-    ${CMAKE_SOURCE_DIR}/include/libnanomsg
+    ${CMAKE_SOURCE_DIR}/include/nanomsg
 )
 
 target_include_directories(
   taskmasterd
   PRIVATE 
     ${CMAKE_SOURCE_DIR}/include/
-    ${CMAKE_SOURCE_DIR}/include/yaml-cpp-0.8.0
-    ${CMAKE_SOURCE_DIR}/include/libnanomsg.6.0.1
+    ${CMAKE_SOURCE_DIR}/include/yaml-cpp
+    ${CMAKE_SOURCE_DIR}/include/nanomsg
 )
 
 file(GLOB_RECURSE TASKMASTERCTL_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/client/*.cpp")
@@ -94,11 +136,17 @@ target_sources(taskmasterd PRIVATE ${TASKMASTERD_SOURCES})
 target_link_libraries(taskmasterctl PRIVATE common libyaml_cpp libnanomsg Readline::Readline)
 target_link_libraries(taskmasterd PRIVATE common libyaml_cpp libnanomsg Readline::Readline)
 
+target_precompile_headers(taskmasterctl PRIVATE "${CMAKE_SOURCE_DIR}/include/pch.hpp")
+
 install(TARGETS taskmasterd taskmasterctl DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 install(
   FILES 
   ${CMAKE_SOURCE_DIR}/lib/yaml-cpp/libyaml-cpp.so.0.8.0
+  ${CMAKE_SOURCE_DIR}/lib/yaml-cpp/libyaml-cpp.so.0.8
+  ${CMAKE_SOURCE_DIR}/lib/yaml-cpp/libyaml-cpp.so
   ${CMAKE_SOURCE_DIR}/lib/nanomsg/libnanomsg.so.6.0.1
+  ${CMAKE_SOURCE_DIR}/lib/nanomsg/libnanomsg.so.6
+  ${CMAKE_SOURCE_DIR}/lib/nanomsg/libnanomsg.so
   DESTINATION
   ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
 )
