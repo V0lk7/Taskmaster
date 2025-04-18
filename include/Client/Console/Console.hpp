@@ -5,7 +5,10 @@
 
 class Console {
 public:
+  enum class State { normal, question };
+
   using CommandHandler = std::function<void(std::vector<std::string> &args)>;
+  using answerFunction = std::function<void(std::string answer)>;
   using CommandMap = std::map<std::string, CommandHandler>;
 
   static Console &Instance();
@@ -18,14 +21,20 @@ public:
   void cleanUp();
 
   CommandMap const &getCommands() const;
+  void setQuestionState(std::string const &, answerFunction);
+  State const &getState() const;
 
 private:
-  std::string _prompt;
-  CommandMap _commands;
+  std::string _prompt = "";
+  CommandMap _commands = {};
+  State _state = State::normal;
+  answerFunction _ansFuction;
 
   static std::vector<std::string> _processList;
 
   static void handler(char *);
+  static void normalState(Console &instance, char *line);
+  static void questionState(Console &instance, char *line);
   static char *argGenerator(const char *, int);
   static char *commandGenerator(const char *, int);
   static char **completionHook(const char *, int, int);

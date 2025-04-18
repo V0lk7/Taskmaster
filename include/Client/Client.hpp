@@ -4,6 +4,7 @@
 #include "pch.hpp" // IWYU pragma: keep
 
 #include "Epoll/Epoll.hpp"
+#include <vector>
 
 #define MAX_EVENTS 2
 #define TIMEOUT 100 // ms
@@ -28,6 +29,8 @@ private:
 
   Console &_console;
   Epoll _epoll;
+
+  std::string _userAnswer;
 
   bool setUpSigaction();
   static void signalHandler(int);

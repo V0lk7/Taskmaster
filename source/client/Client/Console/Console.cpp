@@ -35,6 +35,18 @@ void Console::cleanUp() {
 
 void Console::handler(char *line) {
   Console &instance = Console::Instance();
+
+  switch (instance.getState()) {
+  case State::question:
+    instance.questionState(instance, line);
+    break;
+  default:
+    instance.normalState(instance, line);
+    break;
+  }
+}
+
+void Console::normalState(Console &instance, char *line) {
   CommandHandler function;
   CommandMap const &commands = instance.getCommands();
   CommandMap::const_iterator it;
@@ -73,6 +85,37 @@ void Console::handler(char *line) {
       rl_on_new_line();
     }
   }
+}
+
+void Console::questionState(Console &instance, char *line) {
+  if (instance._state != State::question) {
+    return;
+  }
+  std::string str;
+  if (!line) {
+    str = "";
+  } else {
+    str = line;
+  }
+  if (line) {
+    free(line);
+  }
+  instance._ansFuction(str);
+  rl_set_prompt(">>> ");
+  rl_replace_line("", 0);
+  rl_on_new_line();
+  instance._state = State::normal;
+}
+
+void Console::setQuestionState(std::string const &newPrompt,
+                               answerFunction function) {
+  Console &instance = Console::Instance();
+
+  instance._state = State::question;
+  instance._ansFuction = function;
+  rl_set_prompt(newPrompt.c_str());
+  rl_replace_line("", 0);
+  rl_on_new_line();
 }
 
 bool Console::registerCmd(const std::string &name, CommandHandler handler) {
@@ -175,4 +218,8 @@ char *Console::commandGenerator(const char *text, int state) {
 
 Console::CommandMap const &Console::getCommands() const {
   return Console::Instance()._commands;
+}
+
+Console::State const &Console::getState() const {
+  return Console::Instance()._state;
 }

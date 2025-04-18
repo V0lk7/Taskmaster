@@ -23,4 +23,6 @@
 #include <readline/history.h>
 #include <readline/readline.h>
 
+#include "yaml-cpp/yaml.h" // IWYU pragma: keep
+
 #endif // PCH_HPP

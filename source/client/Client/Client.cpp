@@ -124,32 +124,20 @@ void Client::cmdReload(std::vector<std::string> &args) {
               << "reload          Restart the remote supervisord." << std::endl;
     return;
   }
-  if (askUserConfirmation("Really restart the remote supervisord process ")) {
-    _console.disableHandler();
-    _epoll.insertMessage(RELOAD, "");
-    _console.enableHandler();
-  }
-}
 
-bool Client::askUserConfirmation(std::string const &question) {
-  std::string fullPrompt = question + "y/N? ";
+  _userAnswer = "Y/n";
+  std::string prompt =
+      "Really restart the remote supervisord process " + _userAnswer + "? ";
 
-  _state = State::asking;
-
-  std::cout << "before readline" << std::endl;
-  char *line = readline(fullPrompt.c_str());
-  std::cout << "after readline" << std::endl;
-
-  _state = State::running;
-  if (!line) {
-    return false;
-  }
-
-  std::string input(line);
-  free(line);
-
-  std::transform(input.begin(), input.end(), input.begin(), ::tolower);
-  return (input == "y" || input == "yes");
+  _console.setQuestionState(prompt, [this](std::string arg) {
+    if (arg.empty()) {
+      std::cout << "\nReload aborted." << std::endl;
+    } else if (arg == "\n" || arg == "y" || arg == "Y" || arg == "yes") {
+      _epoll.insertMessage(RELOAD, "");
+    } else {
+      std::cout << "\nReload aborted." << std::endl;
+    }
+  });
 }
 
 void Client::cmdQuit(std::vector<std::string> &args) {

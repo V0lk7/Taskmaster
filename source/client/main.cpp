@@ -1,3 +1,6 @@
+// #include "node/parse.h"
+#include "pch.hpp" // IWYU pragma: keep
+
 #include "Client/Client.hpp"
 
 int main(int ac, char *av[]) {
