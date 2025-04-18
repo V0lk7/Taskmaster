@@ -6,6 +6,7 @@ Process::Process(const std::string &name, const std::string &command, const std:
 	const std::string &stdoutfile, const std::string &stderrfile,
 	mode_t umask, std::map<std::string, std::string> env) {
 	this->_name = name;
+	this->_pid = -1;
 	this->_state = State::STOPPED;
 	this->_command = command;
 	this->_workdir = workdir;
@@ -34,6 +35,7 @@ Process::Process(const std::string &name, const std::string &command, const std:
 
 Process::Process(const std::string &name, const std::string &command) {
 	this->_name = name;
+	this->_pid = -1;
 	this->_state = State::STOPPED;
 	this->_command = command;
 	this->_workdir = ".";
@@ -68,6 +70,12 @@ void Process::setName(const std::string &name) {
 }
 std::string Process::getName() const {
 	return this->_name;
+}
+void Process::setPid(int pid) {
+	this->_pid = pid;
+}
+int Process::getPid() const {
+	return this->_pid;
 }
 void Process::setCommand(const std::string &command) {
 	this->_command = command;
@@ -216,6 +224,32 @@ int Process::convertStringToStopsignal(const std::string &str) {
 	} else {
 		throw std::invalid_argument("Invalid signal string");
 	}
+}
+
+void Process::start() {
+	if (this->_workdir != ".") {
+		if (chdir(this->_workdir.c_str()) != 0) {
+			this->doLog("Error changing directory to " + this->_workdir, Log::LogLevel::ERR);
+			return;
+		}
+	}
+	if (this->_umask != -1) {
+		umask(this->_umask);
+	}
+	if (this->_env.size() > 0) {
+		for (const auto &pair : this->_env) {
+			setenv(pair.first.c_str(), pair.second.c_str(), 1);
+		}
+	}
+	execve(this->_command.c_str(), NULL, NULL);
+}
+
+void Process::stop() {
+
+}
+
+void Process::restart() {
+
 }
 
 Process::Restart convertStringToRestart(const std::string &str) {

@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <stdexcept>
 #include <sys/signal.h>
+#include <sys/stat.h>
 #include "log.hpp"
 
 class Process {
@@ -38,6 +39,8 @@ class Process {
 		State getState() const;
 		void setName(const std::string &name);
 		std::string getName() const;
+		void setPid(int pid);
+		int getPid() const;
 		void setCommand(const std::string &command);
 		std::string getCommand() const;
 		void setWorkdir(const std::string &workdir);
@@ -71,9 +74,14 @@ class Process {
 		std::string convertStateToString(State state);
 		std::string convertStopsignalToString(int signal);
 		int convertStringToStopsignal(const std::string &str);
+		void start();
+		void stop();
+		void restart();
+		void kill();
 
 		private:
 		std::string _name;
+		int _pid;
 		State _state;
 		std::string _command;
 		std::string _workdir;
