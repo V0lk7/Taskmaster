@@ -1,10 +1,5 @@
 #include "Client/Epoll/Epoll.hpp"
 
-#include <fcntl.h>
-#include <iostream>
-#include <sys/epoll.h>
-#include <unistd.h>
-
 Epoll::Epoll() {}
 
 Epoll::~Epoll() { cleanUp(); };
@@ -64,4 +59,8 @@ bool Epoll::makeFdNonBlocking(int fd) {
     return false;
   }
   return true;
+}
+
+void Epoll::insertMessage(std::string const &cmd, std::string const &arg) {
+  _messageQueue.push(std::pair<std::string, std::string>(cmd, arg));
 }
