@@ -73,7 +73,6 @@ class Process {
 		std::string convertRestartToString(Restart restart);
 		std::string convertStateToString(State state);
 		std::string convertStopsignalToString(int signal);
-		int convertStringToStopsignal(const std::string &str);
 		void start();
 		void stop();
 		void restart();
@@ -101,9 +100,10 @@ class Process {
 
 		char** setArgs(std::string rawCommand);
 		std::string setCommand(std::string rawCommand);
-};
+	};
 
-Process::Restart convertStringToRestart(const std::string &str);
+	int convertStringToStopsignal(const std::string &str);
+	Process::Restart convertStringToRestart(const std::string &str);
 
 #endif
 

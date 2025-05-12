@@ -1,8 +1,8 @@
 unix_http_server:
-  file: ./sock/supervisor.sock
+  file: ./supervisor.sock
   chmod: 0700
 taskmasterd:
-  logfile: ./log/supervisord.log
+  logfile: ./logs/supervisord.log
   loglevel: INFO
 
 taskmasterctl:
@@ -18,7 +18,7 @@ programs:
     exitcodes: [0, 2] #default: [0]
     starttime: 5 #default: 1
     startretries: 2 #default: 3
-    stopsignal: TERM #default: TERM
+    stopsignal: "TERM" #default: TERM
     stopwait: 10 #default: 10
     environment:
       FOO: bar
@@ -34,11 +34,11 @@ programs:
     numprocs: 1
     starttime: 5
     startretries: 2
-    stopsignal: TERM
+    stopsignal: "TERM"
     stopwait: 10
     environment:
       FOO: bar
       ETC: aled
     umask: 022
-    stdout_logfile: logs/tail.log
-    stderr_logfile: logs/tail.err.log
+    stdout_logfile: ./logs/tail.log
+    stderr_logfile: ./logs/tail.err.log

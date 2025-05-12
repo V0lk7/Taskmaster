@@ -40,19 +40,25 @@ Log parsingTaskmasterd(YAML::Node taskmasterd) {
 }
 
 int parsingFile(std::string config_file) {
+	std::cout << "Parsing config file..." << std::endl;
 	YAML::Node config = YAML::LoadFile(config_file);
 	if (!config) {
 	  std::cerr << "Error: Unable to load config file." << std::endl;
 	  return 1;
 	}
 	try {
+		std::cout << "Parsing Socket" << std::endl;
 		std::string socket_path = parsingSocket(config["unix_http_server"]);
+		std::cout << "Parsing Taskmasterd" << std::endl;
 		Log log_info = parsingTaskmasterd(config["taskmasterd"]);
+		std::cout << "Parsing Process" << std::endl;
 		std::vector<Process> processes = parsingProcess(config["programs"]);
+		std::cout << "Daemon creation" << std::endl;
 		Daemon daemon(socket_path, log_info);
 		daemon.sendLogs("Daemon started.");
 		for (auto& process : processes) {
 			daemon.addProcess(process);
+			std::cout << "Process " << process.getName() << " added." << std::endl;
 			if (process.getAutostart()) {
 				process.start();
 			}

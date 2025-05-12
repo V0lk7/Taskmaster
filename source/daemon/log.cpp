@@ -9,6 +9,7 @@ Log::Log(std::string name, Type type, LogLevel level, const std::string logfile)
 	if (type == Type::SYSLOG) {
 		openlog(name.c_str(), LOG_PID | LOG_CONS, LOG_DAEMON);
 	} else if (type == Type::FILE) {
+		
 		std::ofstream logFile(logfile, std::ios_base::app);
 		if (!logFile.is_open()) {
 			throw std::ios_base::failure("Failed to open log file");

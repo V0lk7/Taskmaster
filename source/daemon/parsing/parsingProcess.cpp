@@ -102,7 +102,7 @@ std::vector<Process> parsingProcess(YAML::Node processes) {
 
 		YAML::Node stopsignal = process["stopsignal"];
 		if (stopsignal) {
-			int process_stopsignal = stopsignal.as<int>();
+			int process_stopsignal = convertStringToStopsignal(stopsignal.as<std::string>());
 			if (process_stopsignal < 0) {
 				syslog(LOG_ERR, "Error: 'stopsignal' must be greater than or equal to 0.");
 				throw std::runtime_error("Error: 'stopsignal' must be greater than or equal to 0.");

@@ -244,20 +244,6 @@ std::string Process::convertStopsignalToString(int signal) {
 	}
 }
 
-int Process::convertStringToStopsignal(const std::string &str) {
-	if (str == "TERM") {
-		return SIGTERM;
-	} else if (str == "KILL") {
-		return SIGKILL;
-	} else if (str == "INT") {
-		return SIGINT;
-	} else if (str == "HUP") {
-		return SIGHUP;
-	} else {
-		throw std::invalid_argument("Invalid signal string");
-	}
-}
-
 void Process::start() {
 	if (this->_workdir != ".") {
 		if (chdir(this->_workdir.c_str()) != 0) {
@@ -274,8 +260,21 @@ void Process::start() {
 		}
 	}
 	setState(State::STARTING);
-	this->_pid = fork();
-	execve(this->_command.c_str(), this->_args, nullptr);
+	this->doLog("Starting process " + this->_name, Log::LogLevel::INFO);
+	int pid = fork();
+	if (pid == -1) {
+		this->doLog("Error forking process " + this->_name, Log::LogLevel::ERR);
+		return ;
+	} else if (pid == 0) {
+		if (execve(this->_command.c_str(), this->_args, nullptr) == -1) {
+			this->doLog("Error executing process " + this->_name, Log::LogLevel::ERR);
+			this->setState(State::EXITED);
+			this->setPid(-1);
+			exit(1);
+		}
+		exit(0);
+	}
+	this->_pid = pid;
 }
 
 void Process::stop() {
@@ -295,5 +294,19 @@ Process::Restart convertStringToRestart(const std::string &str) {
 		return Process::Restart::FALSE;
 	} else {
 		throw std::invalid_argument("Invalid restart option");
+	}
+}
+
+int convertStringToStopsignal(const std::string &str) {
+	if (str == "TERM") {
+		return SIGTERM;
+	} else if (str == "KILL") {
+		return SIGKILL;
+	} else if (str == "INT") {
+		return SIGINT;
+	} else if (str == "HUP") {
+		return SIGHUP;
+	} else {
+		throw std::invalid_argument("Invalid signal string");
 	}
 }

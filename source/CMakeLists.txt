@@ -109,22 +109,21 @@ target_compile_options(
     -Wall
     -Wextra
     -Werror
+	-gdwarf
 )
 
 target_include_directories(
   taskmasterctl
   PRIVATE
     ${CMAKE_SOURCE_DIR}/include/taskmasterctl
-    ${CMAKE_SOURCE_DIR}/include/yaml-cpp
-    ${CMAKE_SOURCE_DIR}/include/libnanomsg
+    ${CMAKE_SOURCE_DIR}/include
 )
 
 target_include_directories(
   taskmasterd
   PRIVATE
     ${CMAKE_SOURCE_DIR}/include/taskmasterd
-    ${CMAKE_SOURCE_DIR}/include/yaml-cpp
-    ${CMAKE_SOURCE_DIR}/include/libnanomsg
+    ${CMAKE_SOURCE_DIR}/include
 )
 
 file(GLOB_RECURSE TASKMASTERCTL_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/client/*.cpp")
