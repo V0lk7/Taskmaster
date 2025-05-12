@@ -1,6 +1,7 @@
 #include "Client/Client.hpp"
 #include "Client/Console/Console.hpp"
 #include "common/Commands.hpp"
+#include <readline/readline.h>
 
 Client &Client::Instance() {
   static Client _instance;
@@ -121,21 +122,19 @@ void Client::cmdRestart(std::vector<std::string> &args) {
 void Client::cmdReload(std::vector<std::string> &args) {
   if (!args.empty()) {
     std::cout << "Error: reload accepts no arguments\n"
-              << "reload          Restart the remote supervisord." << std::endl;
+              << "reload          Restart the remote taskmasterd." << std::endl;
     return;
   }
 
   _userAnswer = "Y/n";
   std::string prompt =
-      "Really restart the remote supervisord process " + _userAnswer + "? ";
+      "Really restart the remote taskmasterd process " + _userAnswer + "? ";
 
   _console.setQuestionState(prompt, [this](std::string arg) {
-    if (arg.empty()) {
-      std::cout << "\nReload aborted." << std::endl;
-    } else if (arg == "\n" || arg == "y" || arg == "Y" || arg == "yes") {
+    if (arg.empty() || arg == "y" || arg == "Y" || arg == "yes") {
       _epoll.insertMessage(RELOAD, "");
     } else {
-      std::cout << "\nReload aborted." << std::endl;
+      std::cout << "Reload aborted." << std::endl;
     }
   });
 }

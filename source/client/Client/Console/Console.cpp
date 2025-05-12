@@ -1,6 +1,7 @@
 #include "Client/Console/Console.hpp"
 #include "common/Commands.hpp"
 #include "common/Utils.hpp"
+#include <cstdio>
 #include <readline/readline.h>
 
 std::vector<std::string> Console::_processList = {
@@ -44,6 +45,9 @@ void Console::handler(char *line) {
     instance.normalState(instance, line);
     break;
   }
+  if (line) {
+    free(line);
+  }
 }
 
 void Console::normalState(Console &instance, char *line) {
@@ -63,44 +67,49 @@ void Console::normalState(Console &instance, char *line) {
     rl_callback_handler_remove();
   } else {
     std::string str(line);
-    free(line);
 
     Utils::trim(str);
     if (!str.empty()) {
       add_history(str.c_str());
-    }
 
-    tokens = Utils::split(str, " ");
+      tokens = Utils::split(str, " ");
 
-    if (!tokens.empty()) {
-      it = commands.find(tokens[0]);
+      if (!tokens.empty()) {
+        it = commands.find(tokens[0]);
 
-      if (it == commands.cend()) {
-        std::cout << "*** Unknown syntax: " << tokens[0] << std::endl;
-      } else {
-        tokens.erase(tokens.begin());
-        it->second(tokens);
+        if (it == commands.cend()) {
+          std::cout << "*** Unknown syntax: " << tokens[0] << std::endl;
+        } else {
+          tokens.erase(tokens.begin());
+          it->second(tokens);
+        }
       }
-      rl_replace_line("", 0);
-      rl_on_new_line();
     }
+    rl_replace_line("", 0);
+    rl_on_new_line();
   }
 }
 
 void Console::questionState(Console &instance, char *line) {
-  if (instance._state != State::question) {
-    return;
-  }
-  std::string str;
-  if (!line) {
-    str = "";
-  } else {
-    str = line;
-  }
+  std::string str("");
+
   if (line) {
-    free(line);
+    str = line;
+    instance._ansFuction(str);
+  } else {
+    CommandMap const &commands = instance.getCommands();
+    auto it = commands.find("quit");
+    std::vector<std::string> tokens = {};
+
+    if (it == commands.cend()) {
+      return;
+    }
+    CommandHandler function = it->second;
+
+    function(tokens);
+    rl_callback_handler_remove();
   }
-  instance._ansFuction(str);
+
   rl_set_prompt(">>> ");
   rl_replace_line("", 0);
   rl_on_new_line();
@@ -115,7 +124,6 @@ void Console::setQuestionState(std::string const &newPrompt,
   instance._ansFuction = function;
   rl_set_prompt(newPrompt.c_str());
   rl_replace_line("", 0);
-  rl_on_new_line();
 }
 
 bool Console::registerCmd(const std::string &name, CommandHandler handler) {
