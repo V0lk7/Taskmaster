@@ -30,6 +30,8 @@ private:
   Console &_console;
   Epoll _epoll;
 
+  bool extractSocket(std::string const &);
+
   bool setUpSigaction();
   static void signalHandler(int);
 

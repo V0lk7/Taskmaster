@@ -1,5 +1,7 @@
 #include "Client/Client.hpp"
 
+#include "yaml-cpp/yaml.h"
+
 #include <csignal>
 #include <iostream>
 #include <unistd.h>
@@ -14,12 +16,11 @@ Client &Client::Instance() {
 Client::~Client() { cleanUp(); }
 
 bool Client::setupClient(std::string const &conf) {
-  if (conf.empty()) {
-    std::cerr << "[Error] - Client::setupClient - No conf file given!"
-              << std::endl;
+
+  if (!extractSocket(conf)) {
     return false;
   }
-  (void)conf;
+
   if (!setUpSigaction()) {
     return false;
   }
@@ -33,6 +34,27 @@ bool Client::setupClient(std::string const &conf) {
   }
   _state = State::setup;
   return true;
+}
+
+bool Client::extractSocket(std::string const &conf) {
+  if (conf.empty()) {
+    std::cerr
+        << "[Error] - Client::extractSocket - No configuration file given!"
+        << std::endl;
+    return false;
+  }
+  try {
+    YAML::Node config = YAML::LoadFile(conf);
+    YAML::Node node = config["taskmasterctl"];
+
+    std::string sock(node.as<std::string>());
+
+    std::cout << "sock = " << sock << std::endl;
+    return true;
+  } catch (YAML::Exception const &e) {
+    std::cerr << "[Error] - Client::extractSocket - " << e.what() << std::endl;
+    return false;
+  }
 }
 
 bool Client::registerCommands() {
