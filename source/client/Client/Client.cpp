@@ -1,11 +1,6 @@
 #include "Client/Client.hpp"
 
-#include "yaml-cpp/yaml.h"
-
-#include <csignal>
-#include <iostream>
-#include <unistd.h>
-#include <vector>
+#include "pch.hpp"
 
 Client &Client::Instance() {
   static Client _instance;
@@ -16,8 +11,9 @@ Client &Client::Instance() {
 Client::~Client() { cleanUp(); }
 
 bool Client::setupClient(std::string const &conf) {
+  std::string socket = extractSocket(conf);
 
-  if (!extractSocket(conf)) {
+  if (socket.empty()) {
     return false;
   }
 
@@ -25,35 +21,46 @@ bool Client::setupClient(std::string const &conf) {
     return false;
   }
 
-  if (!_epoll.init(0) || !_epoll.addFd(STDIN_FILENO)) {
-    return false;
-  }
-
   if (!this->registerCommands()) {
     return false;
   }
   _state = State::setup;
+
+  if (!_epoll.init(0) || !_epoll.addFd(STDIN_FILENO, true) ||
+      !_epoll.addFd(_request.getrcvFd(), false)) {
+    return false;
+  }
   return true;
 }
 
-bool Client::extractSocket(std::string const &conf) {
+std::string Client::extractSocket(std::string const &conf) {
   if (conf.empty()) {
     std::cerr
         << "[Error] - Client::extractSocket - No configuration file given!"
         << std::endl;
-    return false;
+    return "";
   }
   try {
     YAML::Node config = YAML::LoadFile(conf);
-    YAML::Node node = config["taskmasterctl"];
+    YAML::Node ctlNode = config["taskmasterctl"];
 
-    std::string sock(node.as<std::string>());
+    if (!ctlNode.IsDefined() || !ctlNode["serverurl"]) {
+      std::cerr << "[Error] - Client::extractSocket - "
+                << "socket information was not found!" << std::endl;
+      return "";
+    }
 
-    std::cout << "sock = " << sock << std::endl;
-    return true;
+    std::string socket = config["taskmasterctl"]["serverurl"].as<std::string>();
+
+    if (socket.empty()) {
+      std::cerr << "[Error] - Client::extractSocket - " << "variable is empty!"
+                << std::endl;
+      return "";
+    }
+    return socket;
   } catch (YAML::Exception const &e) {
     std::cerr << "[Error] - Client::extractSocket - " << e.what() << std::endl;
-    return false;
+    return "";
   }
 }
 
@@ -132,7 +139,7 @@ bool Client::run() {
 
   struct epoll_event events[MAX_EVENTS];
 
-  while (_state == State::running) {
+  while (_state == State::running || _state == State::waitReply) {
     int nbrFd = _epoll.waitEvents(events, MAX_EVENTS, TIMEOUT);
 
     for (int i = 0; i < nbrFd; ++i) {
@@ -140,11 +147,14 @@ bool Client::run() {
 
       if (fd == STDIN_FILENO) {
         _console.readCharRead();
+      } else if (fd == _request.getrcvFd()){
+        // read the msg receive and print it to the terminal
+        // and pass it to console to print it and reset prompt after it
       } else {
         continue;
       }
     }
-  }
+  }  
   _console.cleanUp();
   return true;
 }

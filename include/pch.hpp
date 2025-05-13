@@ -20,7 +20,15 @@
 #include <unistd.h>
 
 // Third-Party Libraries
+// ======READLINE======
 #include <readline/history.h>
 #include <readline/readline.h>
+
+// =====YAML-cpp======
+#include <yaml-cpp/yaml.h>
+
+// =====Nanomsg======
+#include "nanomsg/nn.h"     // IWYU pragma: keep
+#include "nanomsg/reqrep.h" // IWYU pragma: keep
 
 #endif // PCH_HPP

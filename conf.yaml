@@ -1,12 +1,12 @@
 unix_http_server:
-  file: ./supervisor.sock
+  file: ./taskmaster.sock
   chmod: 0700
 taskmasterd:
-  logfile: ./logs/supervisord.log
+  logfile: ./logs/taskmasterd.log
   loglevel: INFO
 
 taskmasterctl:
-  serverurl: unix://./sock/supervisor.sock
+  serverurl: ./taskmaster.sock
 
 programs:
   - name: simple_http #require

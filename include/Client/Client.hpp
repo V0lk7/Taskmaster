@@ -3,6 +3,7 @@
 
 #include "Console/Console.hpp"
 #include "Epoll/Epoll.hpp"
+#include "RequestClient/RequestClient.hpp"
 
 #include <string>
 
@@ -15,7 +16,7 @@ class Client {
   friend class TestClient;
 
 public:
-  enum class State { idle, setup, running, error, exit };
+  enum class State { idle, setup, running, waitReply, error, exit };
 
   static Client &Instance();
   ~Client();
@@ -29,8 +30,9 @@ private:
 
   Console &_console;
   Epoll _epoll;
+  RequestClient _request;
 
-  bool extractSocket(std::string const &);
+  std::string extractSocket(std::string const &);
 
   bool setUpSigaction();
   static void signalHandler(int);

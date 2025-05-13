@@ -9,7 +9,7 @@ public:
   ~Epoll();
   bool init(int flags);
   int waitEvents(struct epoll_event *events, int max_events, int timeout);
-  bool addFd(int fd);
+  bool addFd(int fd, bool modifyIt);
   void cleanUp();
 
 private:
