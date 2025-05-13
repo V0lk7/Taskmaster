@@ -30,7 +30,7 @@ public:
 	LogLevel getLogLevel();
 
 	void doLog(const std::string &message);
-	int convertLogLevelToSyslog();
+	void printLog();
 
 	private:
 	std::string _name;
@@ -39,6 +39,7 @@ public:
 	std::string _logFile;
 };
 
+int convertLogLevelToSyslog(Log::LogLevel level);
 Log::LogLevel convertStringToLogLevel(const std::string &str);
 
 #endif

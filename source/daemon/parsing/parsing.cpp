@@ -60,10 +60,12 @@ int parsingFile(std::string config_file) {
 			daemon.addProcess(process);
 			std::cout << "Process " << process.getName() << " added." << std::endl;
 			if (process.getAutostart()) {
+				std::cout << "Process " << process.getName() << " will be started." << std::endl;
 				process.start();
 			}
 		}
 		daemon.sendLogs("All processes started.");
+		// daemon.printDaemon();
 	}
 	catch (const std::runtime_error& e) {
 		std::cerr << "Error: " << e.what() << std::endl;

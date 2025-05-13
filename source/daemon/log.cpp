@@ -9,7 +9,6 @@ Log::Log(std::string name, Type type, LogLevel level, const std::string logfile)
 	if (type == Type::SYSLOG) {
 		openlog(name.c_str(), LOG_PID | LOG_CONS, LOG_DAEMON);
 	} else if (type == Type::FILE) {
-		
 		std::ofstream logFile(logfile, std::ios_base::app);
 		if (!logFile.is_open()) {
 			throw std::ios_base::failure("Failed to open log file");
@@ -45,7 +44,7 @@ void Log::doLog(const std::string &message) {
 			std::cerr << message << std::endl;
 			break;
 		case Type::SYSLOG:
-			syslog(convertLogLevelToSyslog(), "%s", message.c_str());
+			syslog(convertLogLevelToSyslog(this->_level), "%s", message.c_str());
 			break;
 		case Type::FILE:
 			{
@@ -61,17 +60,34 @@ void Log::doLog(const std::string &message) {
 	}
 }
 
-int Log::convertLogLevelToSyslog() {
-	switch (this->_level) {
-		case LogLevel::ERR:
+void Log::printLog() {
+	switch (this->_type) {
+		case Type::STDOUT:
+			std::cout << "Log type: STDOUT" << std::endl;
+			break;
+		case Type::STDERR:
+			std::cerr << "Log type: STDERR" << std::endl;
+			break;
+		case Type::SYSLOG:
+			std::cout << "Log type: SYSLOG" << std::endl;
+			break;
+		case Type::FILE:
+			std::cout << "Log type: FILE, log file: " << this->_logFile << std::endl;
+			break;
+	}
+}
+
+int convertLogLevelToSyslog(Log::LogLevel level) {
+	switch (level) {
+		case Log::LogLevel::ERR:
 			return LOG_ERR;
-		case LogLevel::WARNING:
+		case Log::LogLevel::WARNING:
 			return LOG_WARNING;
-		case LogLevel::NOTICE:
+		case Log::LogLevel::NOTICE:
 			return LOG_NOTICE;
-		case LogLevel::INFO:
+		case Log::LogLevel::INFO:
 			return LOG_INFO;
-		case LogLevel::DEBUG:
+		case Log::LogLevel::DEBUG:
 			return LOG_DEBUG;
 		default:
 			throw std::invalid_argument("Invalid log level");

@@ -9,6 +9,8 @@
 #include <sys/signal.h>
 #include <sys/stat.h>
 #include <cstring>
+#include <sstream>
+#include <iomanip>
 #include "log.hpp"
 
 class Process {
@@ -76,8 +78,9 @@ class Process {
 		void start();
 		void stop();
 		void restart();
+		void printProcess();
 
-		private:
+	private:
 		std::string _name;
 		int _pid;
 		State _state;
@@ -104,6 +107,7 @@ class Process {
 
 	int convertStringToStopsignal(const std::string &str);
 	Process::Restart convertStringToRestart(const std::string &str);
+	std::string to_octal_string(mode_t mode);
 
 #endif
 

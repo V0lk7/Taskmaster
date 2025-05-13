@@ -25,6 +25,7 @@ class Daemon {
 		void killProcess(Process &process);
 		void addProcess(Process &process);
 		void removeProcess(Process &process);
+		void printDaemon();
 
 	private :
 		std::string socketPath;

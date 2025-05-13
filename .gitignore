@@ -6,7 +6,7 @@ compile_commands.json
 CMakeCache.txt
 CMakeFiles
 logs
-supervisor.sock
+taskmaster.sock
 
 # Ignorer les symlinks dans lib/nanomsg et lib/yaml-cpp
 lib/nanomsg/libnanomsg.so

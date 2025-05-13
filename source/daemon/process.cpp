@@ -180,9 +180,23 @@ std::map<std::string, std::string> Process::getEnv() const {
 }
 void Process::setStdoutfile(const std::string &stdoutfile) {
 	this->_stdoutfile = stdoutfile;
+	if (this->_stdoutfile == "AUTO") {
+		this->_stdoutfile = this->_name + ".log";
+	}
+	if (this->_stdoutfile != "AUTO") {
+		Log log = Log(this->_name, Log::Type::FILE, Log::LogLevel::INFO, this->_stdoutfile);
+		this->_logs.push_back(log);
+	}
 }
 void Process::setStderrfile(const std::string &stderrfile) {
 	this->_stderrfile = stderrfile;
+	if (this->_stderrfile == "AUTO") {
+		this->_stderrfile = this->_name + ".err";
+	}
+	if (this->_stderrfile != "AUTO") {
+		Log log = Log(this->_name, Log::Type::FILE, Log::LogLevel::ERR, this->_stderrfile);
+		this->_logs.push_back(log);
+	}
 }
 void Process::setUmask(mode_t umask) {
 	this->_umask = umask;
@@ -193,7 +207,7 @@ mode_t Process::getUmask() const {
 
 void Process::doLog(const std::string &message, Log::LogLevel level) {
 	for (auto &log : this->_logs) {
-		if (log.getLogLevel() == level) {
+		if (convertLogLevelToSyslog(log.getLogLevel()) <= convertLogLevelToSyslog(level)) {
 			log.doLog(message);
 		}
 	}
@@ -245,20 +259,6 @@ std::string Process::convertStopsignalToString(int signal) {
 }
 
 void Process::start() {
-	if (this->_workdir != ".") {
-		if (chdir(this->_workdir.c_str()) != 0) {
-			this->doLog("Error changing directory to " + this->_workdir, Log::LogLevel::ERR);
-			return;
-		}
-	}
-	if (this->_umask != (mode_t)-1) {
-		umask(this->_umask);
-	}
-	if (this->_env.size() > 0) {
-		for (const auto &pair : this->_env) {
-			setenv(pair.first.c_str(), pair.second.c_str(), 1);
-		}
-	}
 	setState(State::STARTING);
 	this->doLog("Starting process " + this->_name, Log::LogLevel::INFO);
 	int pid = fork();
@@ -266,6 +266,20 @@ void Process::start() {
 		this->doLog("Error forking process " + this->_name, Log::LogLevel::ERR);
 		return ;
 	} else if (pid == 0) {
+		if (this->_workdir != ".") {
+			if (chdir(this->_workdir.c_str()) != 0) {
+				this->doLog("Error changing directory to " + this->_workdir, Log::LogLevel::ERR);
+				return;
+			}
+		}
+		if (this->_umask != (mode_t)-1) {
+			umask(this->_umask);
+		}
+		if (this->_env.size() > 0) {
+			for (const auto &pair : this->_env) {
+				setenv(pair.first.c_str(), pair.second.c_str(), 1);
+			}
+		}
 		if (execve(this->_command.c_str(), this->_args, nullptr) == -1) {
 			this->doLog("Error executing process " + this->_name, Log::LogLevel::ERR);
 			this->setState(State::EXITED);
@@ -297,6 +311,35 @@ Process::Restart convertStringToRestart(const std::string &str) {
 	}
 }
 
+void Process::printProcess() {
+	std::cout << "Process name: " << this->_name << std::endl;
+	std::cout << "Process command: " << this->_command << std::endl;
+	std::cout << "Process workdir: " << this->_workdir << std::endl;
+	std::cout << "Process nbprocess: " << this->_nbprocess << std::endl;
+	std::cout << "Process autostart: " << (this->_autostart ? "true" : "false") << std::endl;
+	std::cout << "Process restart: " << convertRestartToString(this->_restart) << std::endl;
+	std::cout << "Process exitcodes: ";
+	for (const auto &exitcode : this->_exitcodes) {
+		std::cout << exitcode << " ";
+	}
+	std::cout << std::endl;
+	std::cout << "Process startdelay: " << this->_startdelay << std::endl;
+	std::cout << "Process restartretry: " << this->_restartretry << std::endl;
+	std::cout << "Process stopsignal: " << convertStopsignalToString(this->_stopsignal) << std::endl;
+	std::cout << "Process stoptimeout: " << this->_stoptimeout << std::endl;
+	std::cout << "Process stdoutfile: " << this->_stdoutfile << std::endl;
+	std::cout << "Process stderrfile: " << this->_stderrfile << std::endl;
+	std::cout << "Process umask: " << to_octal_string(this->_umask) << std::endl;
+	std::cout << "Process env: " << std::endl;
+	for (const auto &pair : this->_env) {
+		std::cout << "  " << pair.first << "=" << pair.second << std::endl;
+	}
+	std::cout << "Logs: " << this->_logs.size() << std::endl;
+	for (auto &log : this->_logs) {
+		log.printLog();
+	}
+}
+
 int convertStringToStopsignal(const std::string &str) {
 	if (str == "TERM") {
 		return SIGTERM;
@@ -309,4 +352,10 @@ int convertStringToStopsignal(const std::string &str) {
 	} else {
 		throw std::invalid_argument("Invalid signal string");
 	}
+}
+
+std::string to_octal_string(mode_t mode) {
+    std::ostringstream oss;
+    oss << std::setfill('0') << std::oct << std::setw(3) << (mode & 0777);
+    return oss.str();
 }

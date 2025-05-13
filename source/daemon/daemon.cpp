@@ -17,6 +17,15 @@ Daemon::Daemon(std::string socketPath, Log logInfo)
 	if (this->socketPath.empty()) {
 		return;
 	}
+	// Verify if the socket file already exists
+	if (access(this->socketPath.c_str(), F_OK) == 0) {
+		if (unlink(this->socketPath.c_str()) == -1) {
+			this->loggers[0].doLog("Error unlinking socket: " + std::string(strerror(errno)));
+			close(this->socketFd);
+			throw std::runtime_error("Error unlinking socket: " + std::string(strerror(errno)));
+		}
+		this->loggers[0].doLog("Socket file already exists, unlinking done.");
+	}
 	struct sockaddr_un addr;
 	addr.sun_family = AF_UNIX;
 	strncpy(addr.sun_path, socketPath.c_str(), sizeof(addr.sun_path) - 1);
@@ -115,3 +124,13 @@ void Daemon::removeProcess(Process &process)
 	}
 }
 
+void Daemon::printDaemon()
+{
+	std::cout << "Daemon socket path: " << this->socketPath << std::endl;
+	std::cout << "Daemon socket fd: " << this->socketFd << std::endl;
+	std::cout << "Daemon processes:" << std::endl;
+	for (auto &process : this->processes) {
+		std::cout << "============================" << std::endl;
+		process.printProcess();
+	}
+}
