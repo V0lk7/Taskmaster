@@ -28,3 +28,4 @@ find_package(Readline REQUIRED)
 add_subdirectory(source)
 add_subdirectory(test)
 
+enable_testing()
