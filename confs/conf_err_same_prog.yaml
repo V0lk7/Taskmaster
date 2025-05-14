@@ -1,0 +1,41 @@
+unix_http_server:
+  file: ./taskmaster.sock
+taskmasterd:
+  logfile: ./logs/taskmasterd.log
+  loglevel: INFO
+
+taskmasterctl:
+  serverurl: ./taskmaster.sock
+
+programs:
+  - name: tail_logs
+    command: tail -f /var/log/syslog
+    autostart: true
+    autorestart: true
+    numprocs: 1
+    starttime: 5
+    startretries: 2
+    stopsignal: "TERM"
+    stopwait: 10
+    environment:
+      FOO: bar
+      ETC: aled
+    umask: 022
+    stdout_logfile: ./logs/tail.log
+    stderr_logfile: ./logs/tail.err.log
+
+  - name: tail_logs
+    command: tail -f /var/log/syslog
+    autostart: true
+    autorestart: true
+    numprocs: 1
+    starttime: 5
+    startretries: 2
+    stopsignal: "TERM"
+    stopwait: 10
+    environment:
+      FOO: bar
+      ETC: aled
+    umask: 022
+    stdout_logfile: ./logs/tail.log
+    stderr_logfile: ./logs/tail.err.log

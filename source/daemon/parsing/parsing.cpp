@@ -9,6 +9,10 @@ void send_syslog(int log_level, const std::string& message) {
 std::string parsingSocket(YAML::Node unix_http_server)
 {
 	YAML::Node path = unix_http_server["file"];
+	if (!path) {
+		send_syslog(LOG_ERR, "Error: 'file' not found in 'unix_http_server'.");
+		throw std::runtime_error("Error: 'file' not found in 'unix_http_server'.");
+	}
 	std::string socket_path = path.as<std::string>();
 	return socket_path;
 }

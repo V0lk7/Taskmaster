@@ -1,0 +1,12 @@
+unix_http_server:
+  file: ./taskmaster.sock
+taskmasterd:
+  logfile: ./logs/taskmasterd.log
+  loglevel: INFO
+
+taskmasterctl:
+  serverurl: ./taskmaster.sock
+
+programs:
+  - name: ls #require
+    command: ls  #require
