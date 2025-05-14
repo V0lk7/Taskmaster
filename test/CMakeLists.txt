@@ -9,6 +9,8 @@ project(
   LANGUAGES CXX C
 )
 
+add_executable(tests_client)
+
 include(FetchContent)
 
 FetchContent_Declare(
@@ -22,13 +24,13 @@ FetchContent_MakeAvailable(Catch2)
 add_library(libyaml_cpp SHARED IMPORTED)
 set_target_properties(
   libyaml_cpp PROPERTIES
-  IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/lib/yaml-cpp/libyaml-cpp.so.0.8.0
+  IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/lib/yaml-cpp/libyaml-cpp.so
 )
 
 add_library(libnanomsg SHARED IMPORTED)
 set_target_properties(
   libnanomsg
-  PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/lib/nanomsg/libnanomsg.so.6.0.1
+  PROPERTIES IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/lib/nanomsg/libnanomsg.so
 )
 
 file(GLOB_RECURSE MYLIB_SOURCES
@@ -42,7 +44,13 @@ add_library(myLib STATIC ${MYLIB_SOURCES})
 target_link_libraries(myLib PRIVATE libyaml_cpp libnanomsg Readline::Readline)
 target_include_directories(myLib PUBLIC ${CMAKE_SOURCE_DIR}/include/)
 
-add_executable(tests_client)
+
+set_target_properties(tests_client PROPERTIES
+  BUILD_WITH_INSTALL_RPATH TRUE
+  BUILD_RPATH "${CMAKE_SOURCE_DIR}/lib/yaml-cpp;${CMAKE_SOURCE_DIR}/lib/nanomsg"
+  INSTALL_RPATH "${CMAKE_SOURCE_DIR}/lib/yaml-cpp;${CMAKE_SOURCE_DIR}/lib/nanomsg"
+  SKIP_BUILD_RPATH FALSE
+)
 
 target_link_libraries(tests_client PRIVATE myLib Catch2::Catch2WithMain)
 
@@ -58,6 +66,10 @@ target_include_directories(tests_client PRIVATE ${catch2_SOURCE_DIR}/src/)
 file(GLOB_RECURSE SOURCES_TESTS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
 target_sources(tests_client PRIVATE ${SOURCES_TESTS})
+
+
+# Optional: print to verify
+message(STATUS "BUILD_RPATH: $<TARGET_PROPERTY:tests_client,BUILD_RPATH>")
 
 include(CTest)
 include(Catch)

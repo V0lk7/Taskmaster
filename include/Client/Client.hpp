@@ -4,19 +4,16 @@
 #include "Console/Console.hpp"
 #include "Epoll/Epoll.hpp"
 #include "RequestClient/RequestClient.hpp"
-
-#include <string>
+#include "pch.hpp" // IWYU pragma: keep
 
 #define MAX_EVENTS 2
 #define TIMEOUT 100 // ms
-
-class TestClient;
 
 class Client {
   friend class TestClient;
 
 public:
-  enum class State { idle, setup, running, waitReply, error, exit };
+  enum class State { idle, setup, running, waitingReply, asking, error, exit };
 
   static Client &Instance();
   ~Client();
@@ -34,6 +31,8 @@ private:
 
   std::string extractSocket(std::string const &);
 
+  std::string _userAnswer;
+
   bool setUpSigaction();
   static void signalHandler(int);
 
@@ -43,8 +42,10 @@ private:
   void cmdStart(std::vector<std::string> &args);
   void cmdStop(std::vector<std::string> &args);
   void cmdRestart(std::vector<std::string> &args);
-  void cmdReload();
-  void cmdQuit();
+  void cmdReload(std::vector<std::string> &args);
+  void cmdQuit(std::vector<std::string> &args);
+
+  bool askUserConfirmation(std::string const &);
 
   Client();
   Client(Client &) = delete;

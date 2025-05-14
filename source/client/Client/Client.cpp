@@ -1,6 +1,7 @@
 #include "Client/Client.hpp"
+#include "common/Commands.hpp"
 
-#include "pch.hpp"
+#include "pch.hpp" // IWYU pragma: keep
 
 Client &Client::Instance() {
   static Client _instance;
@@ -78,20 +79,18 @@ bool Client::registerCommands() {
     this->cmdRestart(args);
   };
   Console::CommandHandler reload = [this](std::vector<std::string> &args) {
-    (void)args;
-    this->cmdReload();
+    this->cmdReload(args);
   };
   Console::CommandHandler quit = [this](std::vector<std::string> &args) {
-    (void)args;
-    this->cmdQuit();
+    this->cmdQuit(args);
   };
 
-  if (!_console.registerCmd("status", status) ||
-      !_console.registerCmd("start", start) ||
-      !_console.registerCmd("stop", stop) ||
-      !_console.registerCmd("restart", restart) ||
-      !_console.registerCmd("reload", reload) ||
-      !_console.registerCmd("quit", quit)) {
+  if (!_console.registerCmd(Commands::STATUS, status) ||
+      !_console.registerCmd(Commands::START, start) ||
+      !_console.registerCmd(Commands::STOP, stop) ||
+      !_console.registerCmd(Commands::RESTART, restart) ||
+      !_console.registerCmd(Commands::RELOAD, reload) ||
+      !_console.registerCmd(Commands::QUIT, quit)) {
     return false;
   }
 
@@ -99,28 +98,82 @@ bool Client::registerCommands() {
 }
 
 void Client::cmdStatus(std::vector<std::string> &args) {
-  (void)args;
-  std::cout << "Status has been called." << std::endl;
+  if (args.empty()) {
+    _epoll.insertMessage(Commands::STATUS, "");
+  } else {
+    for (std::string const &arg : args) {
+      _epoll.insertMessage(Commands::STATUS, arg);
+    }
+  }
+  // call epoll req/rep message
 }
+
 void Client::cmdStart(std::vector<std::string> &args) {
-  (void)args;
-  std::cout << "Start has been called." << std::endl;
+  if (args.empty()) {
+    std::cout << "Error: start requires a process name\n"
+              << "start <name>            Start a process\n"
+              << "start <name> <name>     Start multiple processes or groups."
+              << std::endl;
+  } else {
+    for (std::string const &arg : args) {
+      _epoll.insertMessage(Commands::START, arg);
+    }
+    // call epoll req/rep message;
+  }
 }
+
 void Client::cmdStop(std::vector<std::string> &args) {
-  (void)args;
-  std::cout << "stop has been called." << std::endl;
+  if (args.empty()) {
+    std::cout << "Error: stop requires a process name\n"
+              << "stop <name>            Stop a process\n"
+              << "stop <name> <name>     Stop multiple processes or groups."
+              << std::endl;
+  } else {
+    for (std::string const &arg : args) {
+      _epoll.insertMessage(Commands::STOP, arg);
+    }
+    // call epoll req/rep message;
+  }
 }
+
 void Client::cmdRestart(std::vector<std::string> &args) {
+  if (args.empty()) {
+    std::cout
+        << "Error: restart requires a process name\n"
+        << "restart <name>            Restart a process\n"
+        << "restart <name> <name>     Restart multiple processes or groups."
+        << std::endl;
+  } else {
+    for (std::string const &arg : args) {
+      _epoll.insertMessage(Commands::RESTART, arg);
+    }
+    // call epoll req/rep message;
+  }
+}
+
+void Client::cmdReload(std::vector<std::string> &args) {
+  if (!args.empty()) {
+    std::cout << "Error: reload accepts no arguments\n"
+              << "reload          Restart the remote taskmasterd." << std::endl;
+    return;
+  }
+
+  _userAnswer = "Y/n";
+  std::string prompt =
+      "Really restart the remote taskmasterd process " + _userAnswer + "? ";
+
+  _console.setQuestionState(prompt, [this](std::string arg) {
+    if (arg.empty() || arg == "y" || arg == "Y" || arg == "yes") {
+      _epoll.insertMessage(Commands::RELOAD, "");
+    } else {
+      std::cout << "Reload aborted." << std::endl;
+    }
+  });
+}
+
+void Client::cmdQuit(std::vector<std::string> &args) {
   (void)args;
-  std::cout << "Restart has been called." << std::endl;
-}
-void Client::cmdReload() {
-  std::cout << "Reload has been called." << std::endl;
-}
-void Client::cmdQuit() {
-  std::cout << "Quit has been called." << std::endl;
-  cleanUp();
-  exit(0);
+  _state = State::exit;
 }
 
 bool Client::run() {
@@ -139,22 +192,24 @@ bool Client::run() {
 
   struct epoll_event events[MAX_EVENTS];
 
-  while (_state == State::running || _state == State::waitReply) {
+  while (_state >= State::running && _state <= State::asking) {
     int nbrFd = _epoll.waitEvents(events, MAX_EVENTS, TIMEOUT);
 
     for (int i = 0; i < nbrFd; ++i) {
       int fd = events[i].data.fd;
 
       if (fd == STDIN_FILENO) {
-        _console.readCharRead();
-      } else if (fd == _request.getrcvFd()){
+        if (_state != State::asking) {
+          _console.readCharRead();
+        }
+      } else if (fd == _request.getrcvFd()) {
         // read the msg receive and print it to the terminal
         // and pass it to console to print it and reset prompt after it
       } else {
         continue;
       }
     }
-  }  
+  }
   _console.cleanUp();
   return true;
 }
@@ -173,13 +228,13 @@ bool Client::setUpSigaction() {
 
   if (sigaction(SIGINT, &sa, nullptr) < 0) {
     std::cerr
-        << "[Error:1] - Client::setUpSigaction - sigaction failed, errno = "
+        << "[Debug] - Client::setUpSigaction -1- sigaction failed, errno = "
         << errno << std::endl;
     return false;
   }
   if (sigaction(SIGQUIT, &sa, nullptr) < 0) {
     std::cerr
-        << "[Error:2] - Client::setUpSigaction - sigaction failed, errno = "
+        << "[Debug] - Client::setUpSigaction -2- sigaction failed, errno = "
         << errno << std::endl;
     return false;
   }
