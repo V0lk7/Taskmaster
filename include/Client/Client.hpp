@@ -29,7 +29,7 @@ private:
   Epoll _epoll;
   RequestClient _request;
 
-  std::string extractSocket(std::string const &);
+  std::string extractSocket(std::string const &, bool &);
 
   std::string _userAnswer;
 

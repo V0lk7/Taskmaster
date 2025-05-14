@@ -5,8 +5,6 @@
 
 class Epoll {
 public:
-  using messageQueue = std::queue<std::pair<std::string, std::string>>;
-
   Epoll();
   ~Epoll();
 
@@ -15,11 +13,8 @@ public:
   bool addFd(int fd, bool modifyIt);
   void cleanUp();
 
-  void insertMessage(std::string const &, std::string const &);
-
 private:
   int _epollFd = -1;
-  messageQueue _messageQueue;
 
   bool makeFdNonBlocking(int fd);
 };

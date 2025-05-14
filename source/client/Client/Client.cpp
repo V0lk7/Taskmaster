@@ -12,9 +12,10 @@ Client &Client::Instance() {
 Client::~Client() { cleanUp(); }
 
 bool Client::setupClient(std::string const &conf) {
-  std::string socket = extractSocket(conf);
+  bool err = false;
+  std::string socket = extractSocket(conf, err);
 
-  if (socket.empty()) {
+  if (err) {
     return false;
   }
 
@@ -25,17 +26,19 @@ bool Client::setupClient(std::string const &conf) {
   if (!this->registerCommands()) {
     return false;
   }
+
   _state = State::setup;
 
-  if (!_epoll.init(0) || !_epoll.addFd(STDIN_FILENO, true) ||
-      !_epoll.addFd(_request.getrcvFd(), false)) {
+  if (!_epoll.init(0) || !_epoll.addFd(STDIN_FILENO, true)) {
     return false;
   }
+
   return true;
 }
 
-std::string Client::extractSocket(std::string const &conf) {
+std::string Client::extractSocket(std::string const &conf, bool &err) {
   if (conf.empty()) {
+    err = true;
     std::cerr
         << "[Error] - Client::extractSocket - No configuration file given!"
         << std::endl;
@@ -45,18 +48,16 @@ std::string Client::extractSocket(std::string const &conf) {
     YAML::Node config = YAML::LoadFile(conf);
     YAML::Node ctlNode = config["taskmasterctl"];
 
-    if (!ctlNode.IsDefined() || !ctlNode["serverurl"]) {
-      std::cerr << "[Error] - Client::extractSocket - "
-                << "socket information was not found!" << std::endl;
+    if (!ctlNode.IsDefined()) {
+      err = true;
+      std::cerr << "[Error] - .conf file does not include supervisorctl section"
+                << std::endl;
       return "";
     }
 
-    std::string socket = config["taskmasterctl"]["serverurl"].as<std::string>();
-
-    if (socket.empty()) {
-      std::cerr << "[Error] - Client::extractSocket - " << "variable is empty!"
-                << std::endl;
-      return "";
+    std::string socket("");
+    if (config["taskmasterctl"]["serverurl"].IsDefined()) {
+      socket = config["taskmasterctl"]["serverurl"].as<std::string>();
     }
     return socket;
   } catch (YAML::Exception const &e) {
@@ -67,22 +68,22 @@ std::string Client::extractSocket(std::string const &conf) {
 
 bool Client::registerCommands() {
   Console::CommandHandler status = [this](std::vector<std::string> &args) {
-    this->cmdStatus(args);
+    cmdStatus(args);
   };
   Console::CommandHandler start = [this](std::vector<std::string> &args) {
-    this->cmdStart(args);
+    cmdStart(args);
   };
   Console::CommandHandler stop = [this](std::vector<std::string> &args) {
-    this->cmdStop(args);
+    cmdStop(args);
   };
   Console::CommandHandler restart = [this](std::vector<std::string> &args) {
-    this->cmdRestart(args);
+    cmdRestart(args);
   };
   Console::CommandHandler reload = [this](std::vector<std::string> &args) {
-    this->cmdReload(args);
+    cmdReload(args);
   };
   Console::CommandHandler quit = [this](std::vector<std::string> &args) {
-    this->cmdQuit(args);
+    cmdQuit(args);
   };
 
   if (!_console.registerCmd(Commands::STATUS, status) ||
@@ -98,61 +99,45 @@ bool Client::registerCommands() {
 }
 
 void Client::cmdStatus(std::vector<std::string> &args) {
-  if (args.empty()) {
-    _epoll.insertMessage(Commands::STATUS, "");
-  } else {
-    for (std::string const &arg : args) {
-      _epoll.insertMessage(Commands::STATUS, arg);
-    }
-  }
-  // call epoll req/rep message
+  _request.sendMsg(args);
 }
 
 void Client::cmdStart(std::vector<std::string> &args) {
-  if (args.empty()) {
+  if (args.size() <= 1) {
     std::cout << "Error: start requires a process name\n"
               << "start <name>            Start a process\n"
               << "start <name> <name>     Start multiple processes or groups."
               << std::endl;
   } else {
-    for (std::string const &arg : args) {
-      _epoll.insertMessage(Commands::START, arg);
-    }
-    // call epoll req/rep message;
+    _request.sendMsg(args);
   }
 }
 
 void Client::cmdStop(std::vector<std::string> &args) {
-  if (args.empty()) {
+  if (args.size() <= 1) {
     std::cout << "Error: stop requires a process name\n"
               << "stop <name>            Stop a process\n"
               << "stop <name> <name>     Stop multiple processes or groups."
               << std::endl;
   } else {
-    for (std::string const &arg : args) {
-      _epoll.insertMessage(Commands::STOP, arg);
-    }
-    // call epoll req/rep message;
+    _request.sendMsg(args);
   }
 }
 
 void Client::cmdRestart(std::vector<std::string> &args) {
-  if (args.empty()) {
+  if (args.size() <= 1) {
     std::cout
         << "Error: restart requires a process name\n"
         << "restart <name>            Restart a process\n"
         << "restart <name> <name>     Restart multiple processes or groups."
         << std::endl;
   } else {
-    for (std::string const &arg : args) {
-      _epoll.insertMessage(Commands::RESTART, arg);
-    }
-    // call epoll req/rep message;
+    _request.sendMsg(args);
   }
 }
 
 void Client::cmdReload(std::vector<std::string> &args) {
-  if (!args.empty()) {
+  if (args.size() > 1) {
     std::cout << "Error: reload accepts no arguments\n"
               << "reload          Restart the remote taskmasterd." << std::endl;
     return;
@@ -164,17 +149,14 @@ void Client::cmdReload(std::vector<std::string> &args) {
 
   _console.setQuestionState(prompt, [this](std::string arg) {
     if (arg.empty() || arg == "y" || arg == "Y" || arg == "yes") {
-      _epoll.insertMessage(Commands::RELOAD, "");
+      _request.sendMsg(std::vector<std::string>({Commands::RELOAD}));
     } else {
       std::cout << "Reload aborted." << std::endl;
     }
   });
 }
 
-void Client::cmdQuit(std::vector<std::string> &args) {
-  (void)args;
-  _state = State::exit;
-}
+void Client::cmdQuit(std::vector<std::string> &) { _state = State::exit; }
 
 bool Client::run() {
   if (_state == State::idle) {

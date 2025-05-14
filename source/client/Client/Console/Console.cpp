@@ -78,7 +78,6 @@ void Console::normalState(Console &instance, char *line) {
         if (it == commands.cend()) {
           std::cout << "*** Unknown syntax: " << tokens[0] << std::endl;
         } else {
-          tokens.erase(tokens.begin());
           it->second(tokens);
         }
       }
