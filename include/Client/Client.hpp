@@ -1,21 +1,21 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
-#include "Console/Console.hpp"
-#include "Epoll/Epoll.hpp"
+#include "pch.hpp" // IWYU pragma: keep
 
-#include <string>
+#include "Epoll/Epoll.hpp"
+#include <vector>
 
 #define MAX_EVENTS 2
 #define TIMEOUT 100 // ms
 
-class TestClient;
+class Console;
 
 class Client {
   friend class TestClient;
 
 public:
-  enum class State { idle, setup, running, error, exit };
+  enum class State { idle, setup, running, asking, error, exit };
 
   static Client &Instance();
   ~Client();
@@ -30,6 +30,8 @@ private:
   Console &_console;
   Epoll _epoll;
 
+  std::string _userAnswer;
+
   bool setUpSigaction();
   static void signalHandler(int);
 
@@ -39,8 +41,10 @@ private:
   void cmdStart(std::vector<std::string> &args);
   void cmdStop(std::vector<std::string> &args);
   void cmdRestart(std::vector<std::string> &args);
-  void cmdReload();
-  void cmdQuit();
+  void cmdReload(std::vector<std::string> &args);
+  void cmdQuit(std::vector<std::string> &args);
+
+  bool askUserConfirmation(std::string const &);
 
   Client();
   Client(Client &) = delete;
