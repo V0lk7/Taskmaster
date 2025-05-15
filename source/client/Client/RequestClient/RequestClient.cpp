@@ -21,7 +21,7 @@ bool RequestClient::connectToDaemon() {
     return true;
   }
 
-  struct stat buffer;
+  struct stat buffer; // Check if file exist
 
   if (stat(_sockFile.c_str(), &buffer) == -1) {
     std::cerr
