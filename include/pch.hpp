@@ -17,12 +17,19 @@
 // POSIX / System Headers
 #include <fcntl.h>
 #include <sys/epoll.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 // Third-Party Libraries
+// ======READLINE======
 #include <readline/history.h>
 #include <readline/readline.h>
 
-#include "yaml-cpp/yaml.h" // IWYU pragma: keep
+// =====YAML-cpp======
+#include <yaml-cpp/yaml.h>
+
+// =====Nanomsg======
+#include "nanomsg/nn.h"     // IWYU pragma: keep
+#include "nanomsg/reqrep.h" // IWYU pragma: keep
 
 #endif // PCH_HPP

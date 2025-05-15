@@ -1,11 +1,14 @@
 #ifndef COMMANDS_HPP
 #define COMMANDS_HPP
 
-#define STATUS "status"
-#define START "start"
-#define STOP "stop"
-#define RESTART "restart"
-#define RELOAD "reload"
-#define QUIT "quit"
+class Commands {
+public:
+  static constexpr auto STATUS = "status";
+  static constexpr auto START = "start";
+  static constexpr auto STOP = "stop";
+  static constexpr auto RESTART = "restart";
+  static constexpr auto RELOAD = "reload";
+  static constexpr auto QUIT = "quit";
+};
 
 #endif

@@ -1,21 +1,19 @@
 #ifndef CLIENT_HPP
 #define CLIENT_HPP
 
-#include "pch.hpp" // IWYU pragma: keep
-
+#include "Console/Console.hpp"
 #include "Epoll/Epoll.hpp"
-#include <vector>
+#include "RequestClient/RequestClient.hpp"
+#include "pch.hpp" // IWYU pragma: keep
 
 #define MAX_EVENTS 2
 #define TIMEOUT 100 // ms
-
-class Console;
 
 class Client {
   friend class TestClient;
 
 public:
-  enum class State { idle, setup, running, asking, error, exit };
+  enum class State { idle, setup, running, waitingReply, asking, error, exit };
 
   static Client &Instance();
   ~Client();
@@ -29,6 +27,9 @@ private:
 
   Console &_console;
   Epoll _epoll;
+  RequestClient _request;
+
+  std::string extractSocket(std::string const &, bool &);
 
   std::string _userAnswer;
 

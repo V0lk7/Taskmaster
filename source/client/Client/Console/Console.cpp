@@ -1,8 +1,6 @@
 #include "Client/Console/Console.hpp"
 #include "common/Commands.hpp"
 #include "common/Utils.hpp"
-#include <cstdio>
-#include <readline/readline.h>
 
 std::vector<std::string> Console::_processList = {
     "arg1", "arg2",
@@ -80,7 +78,6 @@ void Console::normalState(Console &instance, char *line) {
         if (it == commands.cend()) {
           std::cout << "*** Unknown syntax: " << tokens[0] << std::endl;
         } else {
-          tokens.erase(tokens.begin());
           it->second(tokens);
         }
       }
@@ -148,9 +145,10 @@ char **Console::completionHook(const char *text, int start, int end) {
     std::string buffer(rl_line_buffer);
     std::string cmd = buffer.substr(0, buffer.find(' '));
 
-    if (cmd == RELOAD || cmd == QUIT) {
+    if (cmd == Commands::RELOAD || cmd == Commands::QUIT) {
       matches = nullptr;
-    } else if (cmd == STATUS || cmd == START || cmd == STOP || cmd == RESTART) {
+    } else if (cmd == Commands::STATUS || cmd == Commands::START ||
+               cmd == Commands::STOP || cmd == Commands::RESTART) {
       matches = rl_completion_matches(text, Console::argGenerator);
     }
   }

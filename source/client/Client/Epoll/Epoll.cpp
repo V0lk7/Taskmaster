@@ -26,9 +26,11 @@ int Epoll::waitEvents(struct epoll_event *events, int max_events, int timeout) {
   return epoll_wait(_epollFd, events, max_events, timeout);
 }
 
-bool Epoll::addFd(int fd) {
-  if (!this->makeFdNonBlocking(fd)) {
-    return false;
+bool Epoll::addFd(int fd, bool modifyIt) {
+  if (modifyIt) {
+    if (!this->makeFdNonBlocking(fd)) {
+      return false;
+    }
   }
   struct epoll_event ev = {};
 
@@ -59,8 +61,4 @@ bool Epoll::makeFdNonBlocking(int fd) {
     return false;
   }
   return true;
-}
-
-void Epoll::insertMessage(std::string const &cmd, std::string const &arg) {
-  _messageQueue.push(std::pair<std::string, std::string>(cmd, arg));
 }
