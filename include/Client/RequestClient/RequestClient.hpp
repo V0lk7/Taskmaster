@@ -8,12 +8,13 @@ public:
   RequestClient();
   ~RequestClient();
 
-  bool connectToDaemon();
+  bool connectToSocket();
   int getrcvFd() const;
   bool sendMsg(std::vector<std::string> const &);
   std::string readMsg();
 
   void setsockFile(std::string const &);
+  void clean();
 
 private:
   enum class State { idle, connected, waitingResponse };
@@ -23,7 +24,10 @@ private:
   int _rcvFd;  // Used to epoll on the nano socket
   State _state;
 
-  static constexpr int _timeout = 500; // 500ms timeout
+  static constexpr int TIMEOUT = 10; // 500ms timeout
+  static constexpr int TRY_RCV = 3;
+
+  bool isConnectionAlive();
 };
 
 #endif

@@ -6,7 +6,7 @@ taskmasterd:
   loglevel: INFO
 
 taskmasterctl:
-  serverurl: ./taskmaster.sock
+  serverurl: ipc:///tmp/taskmaster.sock
 
 programs:
   - name: simple_http #require

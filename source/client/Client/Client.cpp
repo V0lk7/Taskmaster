@@ -19,6 +19,8 @@ bool Client::setupClient(std::string const &conf) {
     return false;
   }
 
+  _request.setsockFile(socket);
+
   if (!setUpSigaction()) {
     return false;
   }
