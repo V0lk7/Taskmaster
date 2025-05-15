@@ -1,4 +1,4 @@
-#include "log.hpp"
+#include "daemon/log.hpp"
 
 Log::Log(std::string name, Type type, LogLevel level, const std::string logfile) {
 	this->_name = name;

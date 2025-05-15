@@ -36,29 +36,33 @@ file(GLOB_RECURSE MYLIB_SOURCES
   "${CMAKE_SOURCE_DIR}/source/client/Client/*.cpp"
   "${CMAKE_SOURCE_DIR}/source/client/Client/Console/*.cpp"
   "${CMAKE_SOURCE_DIR}/source/client/Client/Epoll/*.cpp"
+  "${CMAKE_SOURCE_DIR}/source/daemon/parsing/*.cpp"
+  "${CMAKE_SOURCE_DIR}/source/daemon/*.cpp"
 )
+
+list(REMOVE_ITEM MYLIB_SOURCES "${CMAKE_SOURCE_DIR}/source/daemon/main.cpp")
 
 add_library(myLib STATIC ${MYLIB_SOURCES})
 target_link_libraries(myLib PRIVATE libyaml_cpp libnanomsg Readline::Readline)
 target_include_directories(myLib PUBLIC ${CMAKE_SOURCE_DIR}/include/)
 
-add_executable(tests_client)
+add_executable(tests)
 
-target_link_libraries(tests_client PRIVATE myLib Catch2::Catch2WithMain)
+target_link_libraries(tests PRIVATE myLib Catch2::Catch2WithMain)
 
 target_compile_options(
-  tests_client
+  tests
   PRIVATE
     -gdwarf
 )
 
-target_include_directories(tests_client PRIVATE ${CMAKE_SOURCE_DIR}/include/)
-target_include_directories(tests_client PRIVATE ${catch2_SOURCE_DIR}/src/)
+target_include_directories(tests PRIVATE ${CMAKE_SOURCE_DIR}/include/)
+target_include_directories(tests PRIVATE ${catch2_SOURCE_DIR}/src/)
 
 file(GLOB_RECURSE SOURCES_TESTS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
-target_sources(tests_client PRIVATE ${SOURCES_TESTS})
+target_sources(tests PRIVATE ${SOURCES_TESTS})
 
 include(CTest)
 include(Catch)
-catch_discover_tests(tests_client)
+catch_discover_tests(tests)

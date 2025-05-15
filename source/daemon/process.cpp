@@ -1,4 +1,4 @@
-#include "process.hpp"
+#include "daemon/process.hpp"
 
 Process::Process(const std::string &name, const std::string &command, const std::string &workdir,
 	int nbprocess, bool autostart, Restart restart, std::vector<int> exitcodes,

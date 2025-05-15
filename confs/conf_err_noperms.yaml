@@ -1,6 +1,5 @@
 unix_http_server:
   file: ./taskmaster.sock
-  chmod: 0700
 taskmasterd:
   logfile: ./logs/taskmasterd.log
   loglevel: INFO

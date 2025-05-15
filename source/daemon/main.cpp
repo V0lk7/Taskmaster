@@ -1,5 +1,5 @@
 #include <iostream>
-#include "parsing/parsing.hpp"
+#include "daemon/parsing/parsing.hpp"
 
 int main(int argc, char **argv) {
   if (argc < 2) {
@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
 	std::cerr << "Error: Unable to access config file." << std::endl;
 	return 1;
   }
-  parsingFile(config_file);
-  std::cout << "End." << std::endl;
+  int val = parsingFile(config_file);
+  std::cout << "End." << val << std::endl;
   return 0;
 }
