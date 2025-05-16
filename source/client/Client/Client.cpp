@@ -1,6 +1,6 @@
 #include "Client/Client.hpp"
-#include "common/Commands.hpp"
 
+#include "common/Commands.hpp"
 #include "pch.hpp" // IWYU pragma: keep
 
 Client &Client::Instance() {
@@ -19,6 +19,8 @@ bool Client::setupClient(std::string const &conf) {
     return false;
   }
 
+  _request.setsockFile(socket);
+
   if (!setUpSigaction()) {
     return false;
   }
@@ -27,21 +29,22 @@ bool Client::setupClient(std::string const &conf) {
     return false;
   }
 
-  _state = State::setup;
+  std::vector<std::string> cmd({Commands::STATUS});
+  cmdStatus(cmd);
+
+  _console.setReadline();
 
   if (!_epoll.init(0) || !_epoll.addFd(STDIN_FILENO, true)) {
     return false;
   }
-
+  _state = State::setup;
   return true;
 }
 
 std::string Client::extractSocket(std::string const &conf, bool &err) {
   if (conf.empty()) {
     err = true;
-    std::cerr
-        << "[Error] - Client::extractSocket - No configuration file given!"
-        << std::endl;
+    logError("extractSocket() - No configuration file given!");
     return "";
   }
   try {
@@ -50,8 +53,8 @@ std::string Client::extractSocket(std::string const &conf, bool &err) {
 
     if (!ctlNode.IsDefined()) {
       err = true;
-      std::cerr << "[Error] - .conf file does not include supervisorctl section"
-                << std::endl;
+      logError("extractSocket() - configuration file does not include "
+               "supervisorctl section!");
       return "";
     }
 
@@ -61,7 +64,7 @@ std::string Client::extractSocket(std::string const &conf, bool &err) {
     }
     return socket;
   } catch (YAML::Exception const &e) {
-    std::cerr << "[Error] - Client::extractSocket - " << e.what() << std::endl;
+    logError(std::string("extractSocket() - ") + e.what());
     return "";
   }
 }
@@ -99,47 +102,63 @@ bool Client::registerCommands() {
 }
 
 void Client::cmdStatus(std::vector<std::string> &args) {
-  _request.sendMsg(args);
-}
+  int error = 0;
+  std::string response = _request.sendMsg(args, error);
 
-void Client::cmdStart(std::vector<std::string> &args) {
-  if (args.size() <= 1) {
-    std::cout << "Error: start requires a process name\n"
-              << "start <name>            Start a process\n"
-              << "start <name> <name>     Start multiple processes or groups."
-              << std::endl;
-  } else {
-    _request.sendMsg(args);
+  if (error == 0) {
+    _console.setProcessList(response);
+    std::cout << response << std::endl;
   }
 }
 
-void Client::cmdStop(std::vector<std::string> &args) {
+bool Client::cmdStart(std::vector<std::string> &args) {
   if (args.size() <= 1) {
-    std::cout << "Error: stop requires a process name\n"
-              << "stop <name>            Stop a process\n"
-              << "stop <name> <name>     Stop multiple processes or groups."
-              << std::endl;
+    cmdErrorMsg(Commands::CMD::start);
   } else {
-    _request.sendMsg(args);
+    int error = 0;
+    std::string response = _request.sendMsg(args, error);
+
+    if (error == 0) {
+      std::cout << response << std::endl;
+    } else {
+      return false;
+    }
   }
+  return true;
+}
+
+bool Client::cmdStop(std::vector<std::string> &args) {
+  if (args.size() <= 1) {
+    cmdErrorMsg(Commands::CMD::stop);
+  } else {
+    int error = 0;
+    std::string response = _request.sendMsg(args, error);
+
+    if (error == 0) {
+      std::cout << response << std::endl;
+    } else {
+      return false;
+    }
+  }
+  return true;
 }
 
 void Client::cmdRestart(std::vector<std::string> &args) {
   if (args.size() <= 1) {
-    std::cout
-        << "Error: restart requires a process name\n"
-        << "restart <name>            Restart a process\n"
-        << "restart <name> <name>     Restart multiple processes or groups."
-        << std::endl;
+    cmdErrorMsg(Commands::CMD::restart);
   } else {
-    _request.sendMsg(args);
+    args[0] = "stop";
+    if (!cmdStop(args)) {
+      return;
+    }
+    args[0] = "start";
+    cmdStart(args);
   }
 }
 
 void Client::cmdReload(std::vector<std::string> &args) {
   if (args.size() > 1) {
-    std::cout << "Error: reload accepts no arguments\n"
-              << "reload          Restart the remote taskmasterd." << std::endl;
+    cmdErrorMsg(Commands::CMD::reload);
     return;
   }
 
@@ -149,7 +168,13 @@ void Client::cmdReload(std::vector<std::string> &args) {
 
   _console.setQuestionState(prompt, [this](std::string arg) {
     if (arg.empty() || arg == "y" || arg == "Y" || arg == "yes") {
-      _request.sendMsg(std::vector<std::string>({Commands::RELOAD}));
+      int error = 0;
+      std::string response =
+          _request.sendMsg(std::vector<std::string>({Commands::RELOAD}), error);
+
+      if (error == 0) {
+        std::cout << response << std::endl;
+      }
     } else {
       std::cout << "Reload aborted." << std::endl;
     }
@@ -161,14 +186,13 @@ void Client::cmdQuit(std::vector<std::string> &) { _state = State::exit; }
 bool Client::run() {
   if (_state == State::idle) {
     _state = State::error;
-    std::cerr
-        << "[Debug] - Client::run - Cannot run before use of setupClient()"
-        << std::endl;
+    logError("run() - Can\'t run before being set up, please call "
+             "setupClient() before.");
     return false;
   } else if (_state == State::setup) {
     _state = State::running;
   } else if (_state == State::running) {
-    std::cerr << "[Debug] - Client::run - Client already running!" << std::endl;
+    logError("run() - Client already in running state!");
     return false;
   }
 
@@ -199,6 +223,7 @@ bool Client::run() {
 void Client::cleanUp() {
   _console.cleanUp();
   _epoll.cleanUp();
+  _request.cleanUp();
 }
 
 bool Client::setUpSigaction() {
@@ -208,16 +233,9 @@ bool Client::setUpSigaction() {
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = 0;
 
-  if (sigaction(SIGINT, &sa, nullptr) < 0) {
-    std::cerr
-        << "[Debug] - Client::setUpSigaction -1- sigaction failed, errno = "
-        << errno << std::endl;
-    return false;
-  }
-  if (sigaction(SIGQUIT, &sa, nullptr) < 0) {
-    std::cerr
-        << "[Debug] - Client::setUpSigaction -2- sigaction failed, errno = "
-        << errno << std::endl;
+  if (sigaction(SIGINT, &sa, nullptr) < 0 ||
+      sigaction(SIGQUIT, &sa, nullptr) < 0) {
+    logError("sigaction() - internal error", errno);
     return false;
   }
 
@@ -233,3 +251,43 @@ void Client::signalHandler(int signal) {
 }
 
 Client::Client() : _console(Console::Instance()) {}
+
+void Client::logError(const std::string &msg, const int &error) {
+  std::cerr << "[Error] - Client::" << msg;
+  if (error != -1) {
+    std::cerr << " : errno = " << error << std::endl;
+  } else {
+    std::cerr << std::endl;
+  }
+}
+
+void Client::cmdErrorMsg(Commands::CMD const &cmd) const {
+  switch (cmd) {
+  case Commands::CMD::start:
+    std::cout << "Error: start requires a process name\n"
+              << "start <name>            Start a process\n"
+              << "start <name> <name>     Start multiple processes or groups."
+              << std::endl;
+    break;
+  case Commands::CMD::stop:
+    std::cout << "Error: stop requires a process name\n"
+              << "stop <name>            Stop a process\n"
+              << "stop <name> <name>     Stop multiple processes or groups."
+              << std::endl;
+
+    break;
+  case Commands::CMD::restart:
+    std::cout
+        << "Error: restart requires a process name\n"
+        << "restart <name>            Restart a process\n"
+        << "restart <name> <name>     Restart multiple processes or groups."
+        << std::endl;
+    break;
+  case Commands::CMD::reload:
+    std::cout << "Error: reload accepts no arguments\n"
+              << "reload          Restart the remote taskmasterd." << std::endl;
+    break;
+  default:
+    break;
+  }
+}

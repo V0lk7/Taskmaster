@@ -20,6 +20,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <cerrno>
+#include <strings.h>
+#include <sys/types.h>
+
 // Third-Party Libraries
 // ======READLINE======
 #include <readline/history.h>
