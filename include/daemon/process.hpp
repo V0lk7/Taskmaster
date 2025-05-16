@@ -8,7 +8,9 @@
 #include <stdexcept>
 #include <sys/signal.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <cstring>
+#include <fcntl.h>
 #include <sstream>
 #include <iomanip>
 #include "log.hpp"
@@ -77,7 +79,6 @@ class Process {
 		std::string convertStopsignalToString(int signal);
 		void start();
 		void stop();
-		void restart();
 		void printProcess();
 
 	private:

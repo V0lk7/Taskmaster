@@ -180,9 +180,6 @@ std::map<std::string, std::string> Process::getEnv() const {
 }
 void Process::setStdoutfile(const std::string &stdoutfile) {
 	this->_stdoutfile = stdoutfile;
-	if (this->_stdoutfile == "AUTO") {
-		this->_stdoutfile = this->_name + ".log";
-	}
 	if (this->_stdoutfile != "AUTO") {
 		Log log = Log(this->_name, Log::Type::FILE, Log::LogLevel::INFO, this->_stdoutfile);
 		this->_logs.push_back(log);
@@ -190,9 +187,6 @@ void Process::setStdoutfile(const std::string &stdoutfile) {
 }
 void Process::setStderrfile(const std::string &stderrfile) {
 	this->_stderrfile = stderrfile;
-	if (this->_stderrfile == "AUTO") {
-		this->_stderrfile = this->_name + ".err";
-	}
 	if (this->_stderrfile != "AUTO") {
 		Log log = Log(this->_name, Log::Type::FILE, Log::LogLevel::ERR, this->_stderrfile);
 		this->_logs.push_back(log);
@@ -207,7 +201,7 @@ mode_t Process::getUmask() const {
 
 void Process::doLog(const std::string &message, Log::LogLevel level) {
 	for (auto &log : this->_logs) {
-		if (convertLogLevelToSyslog(log.getLogLevel()) <= convertLogLevelToSyslog(level)) {
+		if (convertLogLevelToSyslog(log.getLogLevel()) >= convertLogLevelToSyslog(level)) {
 			log.doLog(message);
 		}
 	}
@@ -259,7 +253,7 @@ std::string Process::convertStopsignalToString(int signal) {
 }
 
 void Process::start() {
-	setState(State::STARTING);
+	this->setState(State::STARTING);
 	this->doLog("Starting process " + this->_name, Log::LogLevel::INFO);
 	int pid = fork();
 	if (pid == -1) {
@@ -280,6 +274,16 @@ void Process::start() {
 				setenv(pair.first.c_str(), pair.second.c_str(), 1);
 			}
 		}
+		if (this->_stdoutfile != "AUTO") {
+			dup2(open(this->_stdoutfile.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644), STDOUT_FILENO);
+		} else {
+			dup2(open("/dev/null", O_WRONLY | O_CREAT | O_APPEND, 0644), STDOUT_FILENO);
+		}
+		if (this->_stderrfile != "AUTO") {
+			dup2(open(this->_stderrfile.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644), STDERR_FILENO);
+		} else {
+			dup2(open("/dev/null", O_WRONLY | O_CREAT | O_APPEND, 0644), STDERR_FILENO);
+		}
 		if (execve(this->_command.c_str(), this->_args, nullptr) == -1) {
 			this->doLog("Error executing process " + this->_name, Log::LogLevel::ERR);
 			this->setState(State::EXITED);
@@ -289,14 +293,29 @@ void Process::start() {
 		exit(0);
 	}
 	this->_pid = pid;
+	this->setState(State::RUNNING);
+	this->doLog("Process " + this->_name + " started with PID " + std::to_string(this->_pid), Log::LogLevel::INFO);
 }
 
 void Process::stop() {
-
-}
-
-void Process::restart() {
-
+	this->doLog("Stopping process " + this->_name, Log::LogLevel::INFO);
+	if (this->_state != State::RUNNING && this->_state != State::STARTING) {
+		this->doLog("Process " + this->_name + " is not running : " + convertStateToString(this->_state), Log::LogLevel::ERR);
+		return ;
+	}
+	if (this->_pid != -1) {
+		kill(this->_pid, this->_stopsignal);
+		int status;
+		waitpid(this->_pid, &status, 0);
+		this->doLog("Process " + this->_name + " stopped", Log::LogLevel::INFO);
+		if (WIFEXITED(status)) {
+			this->doLog("Process " + this->_name + " exited with status " + std::to_string(WEXITSTATUS(status)), Log::LogLevel::INFO);
+		} else {
+			this->doLog("Process " + this->_name + " terminated abnormally", Log::LogLevel::ERR);
+		}
+		this->setPid(-1);
+	}
+	this->setState(State::STOPPED);
 }
 
 Process::Restart convertStringToRestart(const std::string &str) {

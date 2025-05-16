@@ -9,7 +9,15 @@ int parsingTest(std::string config_file) {
   if (access(config_file.c_str(), R_OK) == -1) {
 	return 1;
   }
-  return parsingFile(config_file);
+  try {
+    Daemon *daemon = parsingFile(config_file);
+	delete daemon;
+  }
+  catch (const std::exception &e) {
+	std::cerr << "Error: " << e.what() << std::endl;
+	return 1;
+  }
+  return 0;
 }
 
 TEST_CASE("Parsing conf.yaml", "[parsing]") {

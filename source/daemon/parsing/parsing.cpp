@@ -43,14 +43,12 @@ Log parsingTaskmasterd(YAML::Node taskmasterd) {
 	return log_info;
 }
 
-int parsingFile(std::string config_file) {
+Daemon *parsingFile(std::string config_file) {
 	std::cout << "Parsing config file..." << std::endl;
 	YAML::Node config = YAML::LoadFile(config_file);
 	if (!config) {
-	  std::cerr << "Error: Unable to load config file." << std::endl;
-	  return 1;
+		throw std::runtime_error("Error: Unable to load config file.");
 	}
-	try {
 		std::cout << "Parsing Socket" << std::endl;
 		std::string socket_path = parsingSocket(config["unix_http_server"]);
 		std::cout << "Parsing Taskmasterd" << std::endl;
@@ -58,22 +56,11 @@ int parsingFile(std::string config_file) {
 		std::cout << "Parsing Process" << std::endl;
 		std::vector<Process> processes = parsingProcess(config["programs"]);
 		std::cout << "Daemon creation" << std::endl;
-		Daemon daemon(socket_path, log_info);
-		daemon.sendLogs("Daemon started.");
-		for (auto& process : processes) {
-			daemon.addProcess(process);
-			std::cout << "Process " << process.getName() << " added." << std::endl;
-			if (process.getAutostart()) {
-				std::cout << "Process " << process.getName() << " will be started." << std::endl;
-				process.start();
-			}
+		Daemon *daemon = new Daemon(socket_path, log_info);
+		daemon->sendLogs("Daemon started.");
+		for (auto &process : processes) {
+			daemon->addProcess(process);
 		}
-		daemon.sendLogs("All processes started.");
 		// daemon.printDaemon();
-	}
-	catch (const std::runtime_error& e) {
-		std::cerr << "Error: " << e.what() << std::endl;
-		return 1;
-	}
-	return 0;
+	return daemon;
   }

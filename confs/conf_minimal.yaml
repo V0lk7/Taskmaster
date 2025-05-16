@@ -9,4 +9,4 @@ taskmasterctl:
 
 programs:
   - name: ls #require
-    command: ls  #require
+    command: /bin/ls  #require

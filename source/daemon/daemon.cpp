@@ -38,8 +38,12 @@ Daemon::Daemon(std::string socketPath, Log logInfo)
 
 Daemon::~Daemon()
 {
+	this->stopAllProcesses();
 	if (this->socketFd != -1) {
 		close(this->socketFd);
+	}
+	if (!this->socketPath.empty()) {
+		unlink(this->socketPath.c_str());
 	}
 	for (auto &logger : this->loggers) {
 		logger.doLog("Daemon destroyed.");
@@ -69,43 +73,24 @@ void Daemon::sendLogs(const std::string &message)
 	}
 }
 
-int Daemon::startProcess(Process &process)
+void Daemon::initialStart()
 {
-	// Start the process
-	int pid = fork();
-	if (pid == 0) {
-		// Child process
-		process.start();
-		exit(0);
-	} else if (pid < 0) {
-		this->loggers[0].doLog("Error starting process: " + std::string(strerror(errno)));
-		return -1;
+	for (auto& process : this->processes) {
+		if (process.getAutostart()) {
+			std::cout << "Process " << process.getName() << " will be started." << std::endl;
+			process.start();
+		}
 	}
-	return pid;
+	this->sendLogs("All processes started.");
 }
 
-void Daemon::stopProcess(Process &process)
+void Daemon::stopAllProcesses()
 {
-	// Stop the process
-	int pid = process.getPid();
-	if (pid > 0) {
-		kill(pid, SIGTERM);
-	}
-}
-
-void Daemon::restartProcess(Process &process)
-{
-	// Restart the process
-	this->stopProcess(process);
-	this->startProcess(process);
-}
-
-void Daemon::killProcess(Process &process)
-{
-	// Kill the process
-	int pid = process.getPid();
-	if (pid > 0) {
-		kill(pid, SIGKILL);
+	for (auto &process : this->processes) {
+		if (process.getState() == Process::State::RUNNING || process.getState() == Process::State::STARTING) {
+			process.stop();
+			this->sendLogs("Process " + process.getName() + " stopped.");
+		}
 	}
 }
 
@@ -133,4 +118,28 @@ void Daemon::printDaemon()
 		std::cout << "============================" << std::endl;
 		process.printProcess();
 	}
+}
+
+std::string Daemon::stringStatusProcess(std::string name)
+{
+	for (auto &process : this->processes) {
+		if (process.getName() == name) {
+			return "Process " + process.getName() + " is " + process.convertStateToString(process.getState());
+		}
+	}
+	throw std::runtime_error("Process " + name + " not found.");
+}
+
+std::string Daemon::stringStatusAllProcesses()
+{
+	std::string status = "Processes status:\n";
+	for (auto &process : this->processes) {
+		status += "Process " + process.getName() + " is " + process.convertStateToString(process.getState()) + "\n";
+	}
+	return status;
+}
+
+std::vector<Process> Daemon::getProcesses()
+{
+	return this->processes;
 }

@@ -19,13 +19,14 @@ class Daemon {
 		int getSocketFd() const;
 		void setSocketFd(int socketFd);
 		void sendLogs(const std::string &message);
-		int startProcess(Process &process);
-		void stopProcess(Process &process);
-		void restartProcess(Process &process);
-		void killProcess(Process &process);
 		void addProcess(Process &process);
 		void removeProcess(Process &process);
+		void initialStart();
 		void printDaemon();
+		void stopAllProcesses();
+		std::string stringStatusProcess(std::string name);
+		std::string stringStatusAllProcesses();
+		std::vector<Process> getProcesses();
 
 	private :
 		std::string socketPath;

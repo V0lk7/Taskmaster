@@ -15,7 +15,18 @@ int main(int argc, char **argv) {
 	std::cerr << "Error: Unable to access config file." << std::endl;
 	return 1;
   }
-  int val = parsingFile(config_file);
-  std::cout << "End." << val << std::endl;
+  try {
+  	Daemon *daemon = parsingFile(config_file);
+  	daemon->initialStart();
+  	std::cout << "Daemon started." << std::endl;
+	sleep(60);
+	std::cout << daemon->stringStatusAllProcesses() << std::endl;;
+	std::cout << "Daemon stopped." << std::endl;
+	delete daemon;
+  }
+  catch (const std::exception &e) {
+  	std::cerr << "Error: " << e.what() << std::endl;
+  	return 1;
+  }
   return 0;
 }
