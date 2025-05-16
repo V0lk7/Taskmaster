@@ -8,13 +8,11 @@ public:
   RequestClient();
   ~RequestClient();
 
-  bool connectToSocket();
   int getrcvFd() const;
-  bool sendMsg(std::vector<std::string> const &);
-  std::string readMsg();
+  std::string sendMsg(std::vector<std::string> const &, int &);
 
   void setsockFile(std::string const &);
-  void clean();
+  void cleanUp();
 
 private:
   enum class State { idle, connected, waitingResponse };
@@ -28,6 +26,10 @@ private:
   static constexpr int TRY_RCV = 3;
 
   bool isConnectionAlive();
+  bool socketFileExists() const;
+  bool tryRecv(char *buf, size_t size, const std::string &expected = "");
+  void logError(const std::string &msg, const int &error = -1);
+  bool connectToSocket();
 };
 
 #endif

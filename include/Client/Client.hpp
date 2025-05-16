@@ -4,14 +4,10 @@
 #include "Console/Console.hpp"
 #include "Epoll/Epoll.hpp"
 #include "RequestClient/RequestClient.hpp"
+#include "common/Commands.hpp"
 #include "pch.hpp" // IWYU pragma: keep
 
-#define MAX_EVENTS 2
-#define TIMEOUT 100 // ms
-
 class Client {
-  friend class TestClient;
-
 public:
   enum class State { idle, setup, running, waitingReply, asking, error, exit };
 
@@ -28,10 +24,12 @@ private:
   Console &_console;
   Epoll _epoll;
   RequestClient _request;
+  std::string _userAnswer;
+
+  static constexpr int TIMEOUT = 100;
+  static constexpr int MAX_EVENTS = 2;
 
   std::string extractSocket(std::string const &, bool &);
-
-  std::string _userAnswer;
 
   bool setUpSigaction();
   static void signalHandler(int);
@@ -39,13 +37,16 @@ private:
   bool registerCommands();
 
   void cmdStatus(std::vector<std::string> &args);
-  void cmdStart(std::vector<std::string> &args);
-  void cmdStop(std::vector<std::string> &args);
+  bool cmdStart(std::vector<std::string> &args);
+  bool cmdStop(std::vector<std::string> &args);
   void cmdRestart(std::vector<std::string> &args);
   void cmdReload(std::vector<std::string> &args);
   void cmdQuit(std::vector<std::string> &args);
 
   bool askUserConfirmation(std::string const &);
+
+  void cmdErrorMsg(Commands::CMD const &) const;
+  void logError(const std::string &msg, const int &error = -1);
 
   Client();
   Client(Client &) = delete;

@@ -14,6 +14,7 @@ public:
   static Console &Instance();
   ~Console();
 
+  void setReadline();
   void disableHandler();
   void enableHandler();
   bool registerCmd(const std::string &, CommandHandler);
@@ -23,6 +24,7 @@ public:
   CommandMap const &getCommands() const;
   void setQuestionState(std::string const &, answerFunction);
   State const &getState() const;
+  void setProcessList(std::string const &);
 
 private:
   std::string _prompt = "";

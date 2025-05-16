@@ -3,6 +3,8 @@
 
 class Commands {
 public:
+  enum class CMD { status, start, stop, restart, reload, quit };
+
   static constexpr auto STATUS = "status";
   static constexpr auto START = "start";
   static constexpr auto STOP = "stop";

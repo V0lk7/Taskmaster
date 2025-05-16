@@ -2,9 +2,7 @@
 #include "common/Commands.hpp"
 #include "common/Utils.hpp"
 
-std::vector<std::string> Console::_processList = {
-    "arg1", "arg2",
-    "arg3"}; // TODO modify this list when status is first called
+std::vector<std::string> Console::_processList = {};
 
 Console &Console::Instance() {
   static Console _instance;
@@ -12,13 +10,19 @@ Console &Console::Instance() {
   return _instance;
 }
 
-Console::Console() {
+Console::Console() {}
+
+Console::~Console() {}
+
+void Console::setProcessList(std::string const &args) {
+  Console::_processList = Utils::split(args, " ");
+}
+
+void Console::setReadline() {
   rl_attempted_completion_function = &Console::completionHook;
 
   rl_callback_handler_install(">>> ", &Console::handler);
 }
-
-Console::~Console() {}
 
 void Console::disableHandler() { rl_callback_handler_remove(); }
 
