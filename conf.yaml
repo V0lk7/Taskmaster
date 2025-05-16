@@ -1,0 +1,44 @@
+unix_http_server:
+  file: ./taskmaster.sock
+  chmod: 0700
+taskmasterd:
+  logfile: ./logs/taskmasterd.log
+  loglevel: INFO
+
+taskmasterctl:
+  serverurl: ipc:///tmp/taskmaster.sock
+
+programs:
+  - name: simple_http #require
+    command: python3 -m http.server 8080  #require
+    directory: . #default: .
+    numprocs: 1 #default: 1
+    autostart: true #default: true
+    autorestart: true #default: unexpected
+    exitcodes: [0, 2] #default: [0]
+    starttime: 5 #default: 1
+    startretries: 2 #default: 3
+    stopsignal: "TERM" #default: TERM
+    stopwait: 10 #default: 10
+    environment:
+      FOO: bar
+      ETC: aled
+    umask: 022 #default: umask de taskemasterd
+    stdout_logfile: ./logs/http_server.log #default: AUTO
+    stderr_logfile: ./logs/http_server.err.log #default: AUTO
+
+  - name: tail_logs
+    command: tail -f /var/log/syslog
+    autostart: true
+    autorestart: true
+    numprocs: 1
+    starttime: 5
+    startretries: 2
+    stopsignal: "TERM"
+    stopwait: 10
+    environment:
+      FOO: bar
+      ETC: aled
+    umask: 022
+    stdout_logfile: ./logs/tail.log
+    stderr_logfile: ./logs/tail.err.log
