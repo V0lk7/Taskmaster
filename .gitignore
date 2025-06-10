@@ -15,3 +15,5 @@ lib/yaml-cpp/libyaml-cpp.so
 # Ignorer les fichiers spécifiques pointés par les symlinks, si nécessaire
 lib/nanomsg/libnanomsg.so.6
 lib/yaml-cpp/libyaml-cpp.so.0.8
+main.c
+serv

@@ -114,16 +114,15 @@ target_compile_options(
 
 target_include_directories(
   taskmasterctl
-  PRIVATE
-    ${CMAKE_SOURCE_DIR}/include/taskmasterctl
-    ${CMAKE_SOURCE_DIR}/include
+  PRIVATE 
+    ${CMAKE_SOURCE_DIR}/include/
 )
 
 target_include_directories(
   taskmasterd
   PRIVATE
     ${CMAKE_SOURCE_DIR}/include/taskmasterd
-    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/include/
 )
 
 file(GLOB_RECURSE TASKMASTERCTL_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/client/*.cpp")
