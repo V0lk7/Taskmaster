@@ -115,16 +115,12 @@ target_include_directories(
   taskmasterctl
   PRIVATE 
     ${CMAKE_SOURCE_DIR}/include/
-    ${CMAKE_SOURCE_DIR}/include/yaml-cpp
-    ${CMAKE_SOURCE_DIR}/include/nanomsg
 )
 
 target_include_directories(
   taskmasterd
   PRIVATE 
     ${CMAKE_SOURCE_DIR}/include/
-    ${CMAKE_SOURCE_DIR}/include/yaml-cpp
-    ${CMAKE_SOURCE_DIR}/include/nanomsg
 )
 
 file(GLOB_RECURSE TASKMASTERCTL_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/client/*.cpp")
