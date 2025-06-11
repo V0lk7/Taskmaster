@@ -70,9 +70,17 @@ file(GLOB_RECURSE SOURCES_TESTS "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
 target_sources(tests PRIVATE ${SOURCES_TESTS})
 
+# Définit la sortie du binaire
+set_target_properties(tests PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test
+)
 
-# Optional: print to verify
-message(STATUS "BUILD_RPATH: $<TARGET_PROPERTY:tests,BUILD_RPATH>")
+# Récupère la valeur exacte du dossier binaire
+get_target_property(TEST_BIN_DIR tests RUNTIME_OUTPUT_DIRECTORY)
+
+# Crée le dossier logs dans ce dossier
+file(MAKE_DIRECTORY "${TEST_BIN_DIR}/logs")
+
 
 include(CTest)
 include(Catch)
