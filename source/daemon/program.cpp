@@ -1,6 +1,6 @@
-#include "daemon/process.hpp"
+#include "daemon/program.hpp"
 
-Process::Process(const std::string &name, const std::string &command, const std::string &workdir,
+Program::Program(const std::string &name, const std::string &command, const std::string &workdir,
 	int nbprocess, bool autostart, Restart restart, std::vector<int> exitcodes,
 	int startdelay, int restartretry, int stopsignal, int stoptimeout,
 	const std::string &stdoutfile, const std::string &stderrfile,
@@ -34,7 +34,7 @@ Process::Process(const std::string &name, const std::string &command, const std:
 	}
 }
 
-Process::Process(const std::string &name, const std::string &command) {
+Program::Program(const std::string &name, const std::string &command) {
 	this->_name = name;
 	this->_pid = -1;
 	this->_state = State::STOPPED;
@@ -57,10 +57,10 @@ Process::Process(const std::string &name, const std::string &command) {
 	this->_logs = std::vector<Log>();
 }
 
-Process::~Process() {
+Program::~Program() {
 }
 
-char **Process::setArgs(std::string rawCommand) {
+char **Program::setArgs(std::string rawCommand) {
 	std::string arg;
 	std::vector<std::string> args;
 	size_t pos = 0;
@@ -79,7 +79,7 @@ char **Process::setArgs(std::string rawCommand) {
 	return argv;
 }
 
-std::string Process::setCommand(std::string rawCommand) {
+std::string Program::setCommand(std::string rawCommand) {
 	std::string command = rawCommand;
 	size_t pos = command.find(" ");
 	if (pos != std::string::npos) {
@@ -93,113 +93,113 @@ std::string Process::setCommand(std::string rawCommand) {
 	return this->_command;
 }
 
-void Process::setState(State state) {
+void Program::setState(State state) {
 	this->_state = state;
 }
 
-Process::State Process::getState() const {
+Program::State Program::getState() const {
 	return this->_state;
 }
-void Process::setName(const std::string &name) {
+void Program::setName(const std::string &name) {
 	this->_name = name;
 }
-std::string Process::getName() const {
+std::string Program::getName() const {
 	return this->_name;
 }
-void Process::setPid(int pid) {
+void Program::setPid(int pid) {
 	this->_pid = pid;
 }
-int Process::getPid() const {
+int Program::getPid() const {
 	return this->_pid;
 }
-std::string Process::getCommand() const {
+std::string Program::getCommand() const {
 	return this->_command;
 }
-void Process::setWorkdir(const std::string &workdir) {
+void Program::setWorkdir(const std::string &workdir) {
 	this->_workdir = workdir;
 }
-std::string Process::getWorkdir() const {
+std::string Program::getWorkdir() const {
 	return this->_workdir;
 }
-void Process::setNbprocess(int nbprocess) {
+void Program::setNbprocess(int nbprocess) {
 	this->_nbprocess = nbprocess;
 }
-int Process::getNbprocess() const {
+int Program::getNbprocess() const {
 	return this->_nbprocess;
 }
-void Process::setAutostart(bool autostart) {
+void Program::setAutostart(bool autostart) {
 	this->_autostart = autostart;
 }
-bool Process::getAutostart() const {
+bool Program::getAutostart() const {
 	return this->_autostart;
 }
-void Process::setRestart(Restart restart) {
+void Program::setRestart(Restart restart) {
 	this->_restart = restart;
 }
-Process::Restart Process::getRestart() const {
+Program::Restart Program::getRestart() const {
 	return this->_restart;
 }
-void Process::setExitcodes(std::vector<int> exitcodes) {
+void Program::setExitcodes(std::vector<int> exitcodes) {
 	this->_exitcodes = exitcodes;
 }
-std::vector<int> Process::getExitcodes() const {
+std::vector<int> Program::getExitcodes() const {
 	return this->_exitcodes;
 }
-void Process::setStartdelay(int startdelay) {
+void Program::setStartdelay(int startdelay) {
 	this->_startdelay = startdelay;
 }
-int Process::getStartdelay() const {
+int Program::getStartdelay() const {
 	return this->_startdelay;
 }
-void Process::setRestartretry(int restartretry) {
+void Program::setRestartretry(int restartretry) {
 	this->_restartretry = restartretry;
 }
-int Process::getRestartretry() const {
+int Program::getRestartretry() const {
 	return this->_restartretry;
 }
-void Process::setStopsignal(int stopsignal) {
+void Program::setStopsignal(int stopsignal) {
 	this->_stopsignal = stopsignal;
 }
-void Process::setStopsignalString(const std::string &stopsignal) {
+void Program::setStopsignalString(const std::string &stopsignal) {
 	this->_stopsignal = convertStringToStopsignal(stopsignal);
 }
-int Process::getStopsignal() const {
+int Program::getStopsignal() const {
 	return this->_stopsignal;
 }
-void Process::setStoptimeout(int stoptimeout) {
+void Program::setStoptimeout(int stoptimeout) {
 	this->_stoptimeout = stoptimeout;
 }
-int Process::getStoptimeout() const {
+int Program::getStoptimeout() const {
 	return this->_stoptimeout;
 }
-void Process::addEnv(const std::string &key, const std::string &value) {
+void Program::addEnv(const std::string &key, const std::string &value) {
 	this->_env[key] = value;
 }
-std::map<std::string, std::string> Process::getEnv() const {
+std::map<std::string, std::string> Program::getEnv() const {
 	return this->_env;
 }
-void Process::setStdoutfile(const std::string &stdoutfile) {
+void Program::setStdoutfile(const std::string &stdoutfile) {
 	this->_stdoutfile = stdoutfile;
 	if (this->_stdoutfile != "AUTO") {
 		Log log = Log(this->_name, Log::Type::FILE, Log::LogLevel::INFO, this->_stdoutfile);
 		this->_logs.push_back(log);
 	}
 }
-void Process::setStderrfile(const std::string &stderrfile) {
+void Program::setStderrfile(const std::string &stderrfile) {
 	this->_stderrfile = stderrfile;
 	if (this->_stderrfile != "AUTO") {
 		Log log = Log(this->_name, Log::Type::FILE, Log::LogLevel::ERR, this->_stderrfile);
 		this->_logs.push_back(log);
 	}
 }
-void Process::setUmask(mode_t umask) {
+void Program::setUmask(mode_t umask) {
 	this->_umask = umask;
 }
-mode_t Process::getUmask() const {
+mode_t Program::getUmask() const {
 	return this->_umask;
 }
 
-void Process::doLog(const std::string &message, Log::LogLevel level) {
+void Program::doLog(const std::string &message, Log::LogLevel level) {
 	for (auto &log : this->_logs) {
 		if (convertLogLevelToSyslog(log.getLogLevel()) >= convertLogLevelToSyslog(level)) {
 			log.doLog(message);
@@ -207,7 +207,7 @@ void Process::doLog(const std::string &message, Log::LogLevel level) {
 	}
 }
 
-std::string Process::convertRestartToString(Restart restart) {
+std::string Program::convertRestartToString(Restart restart) {
 	switch (restart) {
 		case Restart::TRUE:
 			return "true";
@@ -220,7 +220,7 @@ std::string Process::convertRestartToString(Restart restart) {
 	}
 }
 
-std::string Process::convertStateToString(State state) {
+std::string Program::convertStateToString(State state) {
 	switch (state) {
 		case State::STOPPED:
 			return "STOPPED";
@@ -237,7 +237,7 @@ std::string Process::convertStateToString(State state) {
 	}
 }
 
-std::string Process::convertStopsignalToString(int signal) {
+std::string Program::convertStopsignalToString(int signal) {
 	switch (signal) {
 		case SIGTERM:
 			return "TERM";
@@ -252,12 +252,12 @@ std::string Process::convertStopsignalToString(int signal) {
 	}
 }
 
-void Process::start() {
+void Program::start() {
 	this->setState(State::STARTING);
-	this->doLog("Starting process " + this->_name, Log::LogLevel::INFO);
+	this->doLog("Starting program " + this->_name, Log::LogLevel::INFO);
 	int pid = fork();
 	if (pid == -1) {
-		this->doLog("Error forking process " + this->_name, Log::LogLevel::ERR);
+		this->doLog("Error forking program " + this->_name, Log::LogLevel::ERR);
 		return ;
 	} else if (pid == 0) {
 		if (this->_umask != (mode_t)-1) {
@@ -286,7 +286,7 @@ void Process::start() {
 			}
 		}
 		if (execve(this->_command.c_str(), this->_args, nullptr) == -1) {
-			this->doLog("Error executing process " + this->_name, Log::LogLevel::ERR);
+			this->doLog("Error executing Program " + this->_name, Log::LogLevel::ERR);
 			this->setState(State::FATAL);
 			this->setPid(-1);
 			exit(1);
@@ -294,62 +294,62 @@ void Process::start() {
 	}
 	this->_pid = pid;
 	this->setState(State::RUNNING);
-	this->doLog("Process " + this->_name + " started with PID " + std::to_string(this->_pid), Log::LogLevel::INFO);
+	this->doLog("Program " + this->_name + " started with PID " + std::to_string(this->_pid), Log::LogLevel::INFO);
 }
 
-void Process::stop() {
-	this->doLog("Stopping process " + this->_name, Log::LogLevel::INFO);
+void Program::stop() {
+	this->doLog("Stopping program " + this->_name, Log::LogLevel::INFO);
 	if (this->_state != State::RUNNING && this->_state != State::STARTING) {
-		this->doLog("Process " + this->_name + " is not running : " + convertStateToString(this->_state), Log::LogLevel::ERR);
+		this->doLog("Program " + this->_name + " is not running : " + convertStateToString(this->_state), Log::LogLevel::ERR);
 		return ;
 	}
 	if (this->_pid != -1) {
 		kill(this->_pid, this->_stopsignal);
 		int status;
 		waitpid(this->_pid, &status, 0);
-		this->doLog("Process " + this->_name + " stopped", Log::LogLevel::INFO);
+		this->doLog("Program " + this->_name + " stopped", Log::LogLevel::INFO);
 		if (WIFEXITED(status)) {
-			this->doLog("Process " + this->_name + " exited with status " + std::to_string(WEXITSTATUS(status)), Log::LogLevel::INFO);
+			this->doLog("Program " + this->_name + " exited with status " + std::to_string(WEXITSTATUS(status)), Log::LogLevel::INFO);
 		} else {
-			this->doLog("Process " + this->_name + " terminated abnormally", Log::LogLevel::ERR);
+			this->doLog("Program " + this->_name + " terminated abnormally", Log::LogLevel::ERR);
 		}
 		this->setPid(-1);
 	}
 	this->setState(State::STOPPED);
 }
 
-Process::Restart convertStringToRestart(const std::string &str) {
+Program::Restart convertStringToRestart(const std::string &str) {
 	if (str == "true") {
-		return Process::Restart::TRUE;
+		return Program::Restart::TRUE;
 	} else if (str == "unexpected") {
-		return Process::Restart::UNEXPECTED;
+		return Program::Restart::UNEXPECTED;
 	} else if (str == "false") {
-		return Process::Restart::FALSE;
+		return Program::Restart::FALSE;
 	} else {
 		throw std::invalid_argument("Invalid restart option");
 	}
 }
 
-void Process::printProcess() {
-	std::cout << "Process name: " << this->_name << std::endl;
-	std::cout << "Process command: " << this->_command << std::endl;
-	std::cout << "Process workdir: " << this->_workdir << std::endl;
-	std::cout << "Process nbprocess: " << this->_nbprocess << std::endl;
-	std::cout << "Process autostart: " << (this->_autostart ? "true" : "false") << std::endl;
-	std::cout << "Process restart: " << convertRestartToString(this->_restart) << std::endl;
-	std::cout << "Process exitcodes: ";
+void Program::printProgram() {
+	std::cout << "Program name: " << this->_name << std::endl;
+	std::cout << "Program command: " << this->_command << std::endl;
+	std::cout << "Program workdir: " << this->_workdir << std::endl;
+	std::cout << "Program nbprocess: " << this->_nbprocess << std::endl;
+	std::cout << "Program autostart: " << (this->_autostart ? "true" : "false") << std::endl;
+	std::cout << "Program restart: " << convertRestartToString(this->_restart) << std::endl;
+	std::cout << "Program exitcodes: ";
 	for (const auto &exitcode : this->_exitcodes) {
 		std::cout << exitcode << " ";
 	}
 	std::cout << std::endl;
-	std::cout << "Process startdelay: " << this->_startdelay << std::endl;
-	std::cout << "Process restartretry: " << this->_restartretry << std::endl;
-	std::cout << "Process stopsignal: " << convertStopsignalToString(this->_stopsignal) << std::endl;
-	std::cout << "Process stoptimeout: " << this->_stoptimeout << std::endl;
-	std::cout << "Process stdoutfile: " << this->_stdoutfile << std::endl;
-	std::cout << "Process stderrfile: " << this->_stderrfile << std::endl;
-	std::cout << "Process umask: " << to_octal_string(this->_umask) << std::endl;
-	std::cout << "Process env: " << std::endl;
+	std::cout << "Program startdelay: " << this->_startdelay << std::endl;
+	std::cout << "Program restartretry: " << this->_restartretry << std::endl;
+	std::cout << "Program stopsignal: " << convertStopsignalToString(this->_stopsignal) << std::endl;
+	std::cout << "Program stoptimeout: " << this->_stoptimeout << std::endl;
+	std::cout << "Program stdoutfile: " << this->_stdoutfile << std::endl;
+	std::cout << "Program stderrfile: " << this->_stderrfile << std::endl;
+	std::cout << "Program umask: " << to_octal_string(this->_umask) << std::endl;
+	std::cout << "Program env: " << std::endl;
 	for (const auto &pair : this->_env) {
 		std::cout << "  " << pair.first << "=" << pair.second << std::endl;
 	}

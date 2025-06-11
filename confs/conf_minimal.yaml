@@ -9,4 +9,7 @@ taskmasterctl:
 
 programs:
   - name: ls #require
-    command: /bin/ls  #require
+    command: /bin/ls -la #require
+    directory: ..
+    stdout_logfile: ./logs/ls.log
+    stderr_logfile: ./logs/ls.err.log

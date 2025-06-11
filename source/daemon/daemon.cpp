@@ -38,7 +38,7 @@ Daemon::Daemon(std::string socketPath, Log logInfo)
 
 Daemon::~Daemon()
 {
-	this->stopAllProcesses();
+	this->stopAllPrograms();
 	if (this->socketFd != -1) {
 		close(this->socketFd);
 	}
@@ -75,35 +75,35 @@ void Daemon::sendLogs(const std::string &message)
 
 void Daemon::initialStart()
 {
-	for (auto& process : this->processes) {
-		if (process.getAutostart()) {
-			std::cout << "Process " << process.getName() << " will be started." << std::endl;
-			process.start();
+	for (auto& program : this->programs) {
+		if (program.getAutostart()) {
+			std::cout << "Program " << program.getName() << " will be started." << std::endl;
+			program.start();
 		}
 	}
 	this->sendLogs("All processes started.");
 }
 
-void Daemon::stopAllProcesses()
+void Daemon::stopAllPrograms()
 {
-	for (auto &process : this->processes) {
-		if (process.getState() == Process::State::RUNNING || process.getState() == Process::State::STARTING) {
-			process.stop();
-			this->sendLogs("Process " + process.getName() + " stopped.");
+	for (auto &program : this->programs) {
+		if (program.getState() == Program::State::RUNNING || program.getState() == Program::State::STARTING) {
+			program.stop();
+			this->sendLogs("Process " + program.getName() + " stopped.");
 		}
 	}
 }
 
-void Daemon::addProcess(Process &process)
+void Daemon::addProgram(Program &program)
 {
-	this->processes.push_back(process);
+	this->programs.push_back(program);
 }
 
-void Daemon::removeProcess(Process &process)
+void Daemon::removeProgram(Program &program)
 {
-	for (auto it = this->processes.begin(); it != this->processes.end(); ++it) {
-		if (it->getName() == process.getName()) {
-			this->processes.erase(it);
+	for (auto it = this->programs.begin(); it != this->programs.end(); ++it) {
+		if (it->getName() == program.getName()) {
+			this->programs.erase(it);
 			break;
 		}
 	}
@@ -114,32 +114,32 @@ void Daemon::printDaemon()
 	std::cout << "Daemon socket path: " << this->socketPath << std::endl;
 	std::cout << "Daemon socket fd: " << this->socketFd << std::endl;
 	std::cout << "Daemon processes:" << std::endl;
-	for (auto &process : this->processes) {
+	for (auto &process : this->programs) {
 		std::cout << "============================" << std::endl;
-		process.printProcess();
+		process.printProgram();
 	}
 }
 
-std::string Daemon::stringStatusProcess(std::string name)
+std::string Daemon::stringStatusProgram(std::string name)
 {
-	for (auto &process : this->processes) {
-		if (process.getName() == name) {
-			return "Process " + process.getName() + " is " + process.convertStateToString(process.getState());
+	for (auto &program : this->programs) {
+		if (program.getName() == name) {
+			return "Process " + program.getName() + " is " + program.convertStateToString(program.getState());
 		}
 	}
 	throw std::runtime_error("Process " + name + " not found.");
 }
 
-std::string Daemon::stringStatusAllProcesses()
+std::string Daemon::stringStatusAllPrograms()
 {
 	std::string status = "Processes status:\n";
-	for (auto &process : this->processes) {
-		status += "Process " + process.getName() + " is " + process.convertStateToString(process.getState()) + "\n";
+	for (auto &program : this->programs) {
+		status += "Process " + program.getName() + " is " + program.convertStateToString(program.getState()) + "\n";
 	}
 	return status;
 }
 
-std::vector<Process> Daemon::getProcesses()
+std::vector<Program> Daemon::getPrograms()
 {
-	return this->processes;
+	return this->programs;
 }
