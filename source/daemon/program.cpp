@@ -6,7 +6,6 @@ Program::Program(const std::string &name, const std::string &command, const std:
 	const std::string &stdoutfile, const std::string &stderrfile,
 	mode_t umask, std::map<std::string, std::string> env) {
 	this->_name = name;
-	this->_pid = -1;
 	this->_state = State::STOPPED;
 	this->_command = setCommand(command);
 	this->_args = setArgs(command);
@@ -32,11 +31,11 @@ Program::Program(const std::string &name, const std::string &command, const std:
 		Log log = Log(name, Log::Type::FILE, Log::LogLevel::ERR, this->_stderrfile);
 		this->_logs.push_back(log);
 	}
+	this->_processes = std::vector<std::pair<std::string, int>>();
 }
 
 Program::Program(const std::string &name, const std::string &command) {
 	this->_name = name;
-	this->_pid = -1;
 	this->_state = State::STOPPED;
 	this->_command = setCommand(command);
 	this->_args = setArgs(command);
@@ -55,6 +54,7 @@ Program::Program(const std::string &name, const std::string &command) {
 	this->_umask = -1;
 	this->_env = std::map<std::string, std::string>();
 	this->_logs = std::vector<Log>();
+	this->_processes = std::vector<std::pair<std::string, int>>();
 }
 
 Program::~Program() {
@@ -105,12 +105,6 @@ void Program::setName(const std::string &name) {
 }
 std::string Program::getName() const {
 	return this->_name;
-}
-void Program::setPid(int pid) {
-	this->_pid = pid;
-}
-int Program::getPid() const {
-	return this->_pid;
 }
 std::string Program::getCommand() const {
 	return this->_command;
@@ -199,6 +193,11 @@ mode_t Program::getUmask() const {
 	return this->_umask;
 }
 
+void Program::addProcess(const std::string &name, int pid) {
+	std::pair<std::string, int> process(name, pid);
+	this->_processes.push_back(process);
+}
+
 void Program::doLog(const std::string &message, Log::LogLevel level) {
 	for (auto &log : this->_logs) {
 		if (convertLogLevelToSyslog(log.getLogLevel()) >= convertLogLevelToSyslog(level)) {
@@ -252,9 +251,7 @@ std::string Program::convertStopsignalToString(int signal) {
 	}
 }
 
-void Program::start() {
-	this->setState(State::STARTING);
-	this->doLog("Starting program " + this->_name, Log::LogLevel::INFO);
+int Program::startProcess(){
 	int pid = fork();
 	if (pid == -1) {
 		this->doLog("Error forking program " + this->_name, Log::LogLevel::ERR);
@@ -288,11 +285,18 @@ void Program::start() {
 		if (execve(this->_command.c_str(), this->_args, nullptr) == -1) {
 			this->doLog("Error executing Program " + this->_name, Log::LogLevel::ERR);
 			this->setState(State::FATAL);
-			this->setPid(-1);
 			exit(1);
 		}
 	}
-	this->_pid = pid;
+	return pid;
+}
+
+void Program::start() {
+
+	this->setState(State::STARTING);
+	this->doLog("Starting program " + this->_name, Log::LogLevel::INFO);
+
+
 	this->setState(State::RUNNING);
 	this->doLog("Program " + this->_name + " started with PID " + std::to_string(this->_pid), Log::LogLevel::INFO);
 }

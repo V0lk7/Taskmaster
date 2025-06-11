@@ -45,8 +45,6 @@ class Program {
 		State getState() const;
 		void setName(const std::string &name);
 		std::string getName() const;
-		void setPid(int pid);
-		int getPid() const;
 		std::string getCommand() const;
 		void setWorkdir(const std::string &workdir);
 		std::string getWorkdir() const;
@@ -73,6 +71,7 @@ class Program {
 		void addEnv(const std::string &key, const std::string &value);
 		void setUmask(mode_t umask);
 		mode_t getUmask() const;
+		void addProcess(const std::string &name, int pid);
 
 		void doLog(const std::string &message, Log::LogLevel level);
 		std::string convertRestartToString(Restart restart);
@@ -84,7 +83,6 @@ class Program {
 
 	private:
 		std::string _name;
-		int _pid;
 		State _state;
 		std::string _command;
 		char** _args;
@@ -102,9 +100,10 @@ class Program {
 		mode_t _umask; //The umask to set for the process
 		std::map<std::string, std::string> _env; //Environment variables to set for the process
 		std::vector<Log> _logs; //Logs for the process
-
+		std::vector<std::pair<std::string, int>> _processes; //Vector of pairs of process name and its PID
 		char** setArgs(std::string rawCommand);
 		std::string setCommand(std::string rawCommand);
+		int Program::startProcess();
 	};
 
 	int convertStringToStopsignal(const std::string &str);
