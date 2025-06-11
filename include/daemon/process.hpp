@@ -22,7 +22,8 @@ class Process {
 			RUNNING,
 			STARTING,
 			STOPPING,
-			EXITED
+			EXITED,
+			FATAL
 		};
 		enum class Restart {
 			TRUE,

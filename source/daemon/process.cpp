@@ -260,12 +260,6 @@ void Process::start() {
 		this->doLog("Error forking process " + this->_name, Log::LogLevel::ERR);
 		return ;
 	} else if (pid == 0) {
-		if (this->_workdir != ".") {
-			if (chdir(this->_workdir.c_str()) != 0) {
-				this->doLog("Error changing directory to " + this->_workdir, Log::LogLevel::ERR);
-				return;
-			}
-		}
 		if (this->_umask != (mode_t)-1) {
 			umask(this->_umask);
 		}
@@ -277,6 +271,7 @@ void Process::start() {
 		if (this->_stdoutfile != "AUTO") {
 			dup2(open(this->_stdoutfile.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644), STDOUT_FILENO);
 		} else {
+			printf("Redirecting stdout to /dev/null\n");
 			dup2(open("/dev/null", O_WRONLY | O_CREAT | O_APPEND, 0644), STDOUT_FILENO);
 		}
 		if (this->_stderrfile != "AUTO") {
@@ -284,13 +279,18 @@ void Process::start() {
 		} else {
 			dup2(open("/dev/null", O_WRONLY | O_CREAT | O_APPEND, 0644), STDERR_FILENO);
 		}
+		if (this->_workdir != ".") {
+			if (chdir(this->_workdir.c_str()) != 0) {
+				this->doLog("Error changing directory to " + this->_workdir, Log::LogLevel::ERR);
+				return;
+			}
+		}
 		if (execve(this->_command.c_str(), this->_args, nullptr) == -1) {
 			this->doLog("Error executing process " + this->_name, Log::LogLevel::ERR);
-			this->setState(State::EXITED);
+			this->setState(State::FATAL);
 			this->setPid(-1);
 			exit(1);
 		}
-		exit(0);
 	}
 	this->_pid = pid;
 	this->setState(State::RUNNING);
