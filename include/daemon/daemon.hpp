@@ -7,7 +7,7 @@
 #include <sys/un.h>
 #include <cstring>
 #include "log.hpp"
-#include "process.hpp"
+#include "program.hpp"
 
 class Daemon {
 	public:
@@ -19,21 +19,21 @@ class Daemon {
 		int getSocketFd() const;
 		void setSocketFd(int socketFd);
 		void sendLogs(const std::string &message);
-		void addProcess(Process &process);
-		void removeProcess(Process &process);
+		void addProgram(Program &program);
+		void removeProgram(Program &program);
 		void initialStart();
 		void printDaemon();
-		void stopAllProcesses();
-		std::string stringStatusProcess(std::string name);
-		std::string stringStatusAllProcesses();
-		std::vector<Process> getProcesses();
+		void stopAllPrograms();
+		std::string stringStatusProgram(std::string name);
+		std::string stringStatusAllPrograms();
+		std::vector<Program> getPrograms();
 
 	private :
 		std::string socketPath;
 		int socketFd;
 
 		std::vector<Log> loggers;
-		std::vector<Process> processes;
+		std::vector<Program> programs;
 };
 
 #endif

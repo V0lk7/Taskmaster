@@ -19,8 +19,8 @@ int main(int argc, char **argv) {
   	Daemon *daemon = parsingFile(config_file);
   	daemon->initialStart();
   	std::cout << "Daemon started." << std::endl;
-	sleep(60);
-	std::cout << daemon->stringStatusAllProcesses() << std::endl;;
+	sleep(10);
+	std::cout << daemon->stringStatusAllPrograms() << std::endl;;
 	std::cout << "Daemon stopped." << std::endl;
 	delete daemon;
   }

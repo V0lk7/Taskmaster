@@ -5,6 +5,6 @@
 #include "../daemon.hpp"
 
 Daemon *parsingFile(std::string config_file);
-std::vector<Process> parsingProcess(YAML::Node process);
+std::vector<Program> parsingPrograms(YAML::Node program);
 
 #endif

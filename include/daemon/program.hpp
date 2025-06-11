@@ -1,5 +1,5 @@
-#ifndef PROCESS_HPP
-#define PROCESS_HPP
+#ifndef PROGRAM_HPP
+#define PROGRAM_HPP
 
 #include <string>
 #include <map>
@@ -15,14 +15,15 @@
 #include <iomanip>
 #include "log.hpp"
 
-class Process {
+class Program {
 	public:
 		enum class State {
 			STOPPED,
 			RUNNING,
 			STARTING,
 			STOPPING,
-			EXITED
+			EXITED,
+			FATAL
 		};
 		enum class Restart {
 			TRUE,
@@ -32,13 +33,13 @@ class Process {
 
 
 
-		Process(const std::string &name, const std::string &command, const std::string &workdir,
+		Program(const std::string &name, const std::string &command, const std::string &workdir,
 				int nbprocess, bool autostart, Restart restart, std::vector<int> exitcodes,
 				int startdelay, int restartretry, int stopsignal, int stoptimeout,
 				const std::string &stdoutfile, const std::string &stderrfile,
 				mode_t umask, std::map<std::string, std::string> env);
-		Process(const std::string &name, const std::string &command);
-		~Process();
+		Program(const std::string &name, const std::string &command);
+		~Program();
 
 		void setState(State state);
 		State getState() const;
@@ -79,7 +80,7 @@ class Process {
 		std::string convertStopsignalToString(int signal);
 		void start();
 		void stop();
-		void printProcess();
+		void printProgram();
 
 	private:
 		std::string _name;
@@ -107,7 +108,7 @@ class Process {
 	};
 
 	int convertStringToStopsignal(const std::string &str);
-	Process::Restart convertStringToRestart(const std::string &str);
+	Program::Restart convertStringToRestart(const std::string &str);
 	std::string to_octal_string(mode_t mode);
 
 #endif

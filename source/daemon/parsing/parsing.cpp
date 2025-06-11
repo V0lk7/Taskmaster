@@ -43,27 +43,23 @@ Log parsingTaskmasterd(YAML::Node taskmasterd) {
 }
 
 Daemon *parsingFile(std::string config_file) {
-  std::cout << "Parsing config file..." << std::endl;
-  YAML::Node config = YAML::LoadFile(config_file);
-  if (!config) {
-    throw std::runtime_error("Error: Unable to load config file.");
-  }
-  std::cout << "Parsing Socket" << std::endl;
-  std::string socket_path = parsingSocket(config["unix_http_server"]);
-
-  std::cout << "Parsing Taskmasterd" << std::endl;
-  Log log_info = parsingTaskmasterd(config["taskmasterd"]);
-
-  std::cout << "Parsing Process" << std::endl;
-  std::vector<Process> processes = parsingProcess(config["programs"]);
-
-  std::cout << "Daemon creation" << std::endl;
-  Daemon *daemon = new Daemon(socket_path, log_info);
-
-  daemon->sendLogs("Daemon started.");
-  for (auto &process : processes) {
-    daemon->addProcess(process);
-  }
-  // daemon.printDaemon();
-  return daemon;
+	std::cout << "Parsing config file..." << std::endl;
+	YAML::Node config = YAML::LoadFile(config_file);
+	if (!config) {
+		throw std::runtime_error("Error: Unable to load config file.");
+	}
+		std::cout << "Parsing Socket" << std::endl;
+		std::string socket_path = parsingSocket(config["unix_http_server"]);
+		std::cout << "Parsing Taskmasterd" << std::endl;
+		Log log_info = parsingTaskmasterd(config["taskmasterd"]);
+		std::cout << "Parsing Process" << std::endl;
+		std::vector<Program> programs = parsingPrograms(config["programs"]);
+		std::cout << "Daemon creation" << std::endl;
+		Daemon *daemon = new Daemon(socket_path, log_info);
+		daemon->sendLogs("Daemon started.");
+		for (auto &program : programs) {
+			daemon->addProgram(program);
+		}
+		// daemon.printDaemon();
+	return daemon;
 }
