@@ -1,5 +1,6 @@
 #include "Client/RequestClient/RequestClient.hpp"
 #include "common/Utils.hpp"
+#include <cstddef>
 
 constexpr int RequestClient::TIMEOUT;
 constexpr int RequestClient::TRY_RCV;
@@ -24,7 +25,6 @@ bool RequestClient::connectToSocket() {
   }
 
   if (!socketFileExists()) {
-    logError("connectToDaemon - " + _sockFile + " - No such file!");
     return false;
   }
 
@@ -65,16 +65,26 @@ bool RequestClient::connectToSocket() {
   return true;
 }
 
-bool RequestClient::socketFileExists() const {
+int RequestClient::socketFileExists() {
   struct stat buffer;
   std::string name;
 
-  if (_sockFile.find("ipc://") != std::string::npos) {
-    name = std::string(_sockFile.begin() + 6, _sockFile.end());
+  if (_sockFile.find("ipc://") == std::string::npos ||
+      _sockFile.find("unix://") == std::string::npos) {
+    size_t pos = _sockFile.find("ipc://") == std::string::npos ? 7 : 6;
+    name = std::string(_sockFile.begin() + pos, _sockFile.end());
+
+    _sockFile = "ipc://" + name;
   } else {
-    name = _sockFile;
+    logError(std::string("connectToDaemon - Unknown protocol for serverurl " +
+                         _sockFile));
+    return false;
   }
-  return stat(name.c_str(), &buffer) == 0;
+  if (stat(name.c_str(), &buffer) == -1) {
+    logError(std::string("connectToDaemon - No such file! - " + _sockFile));
+    return false;
+  }
+  return true;
 }
 
 int RequestClient::getrcvFd() const { return _rcvFd; }

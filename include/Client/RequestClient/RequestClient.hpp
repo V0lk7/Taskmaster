@@ -26,7 +26,7 @@ private:
   static constexpr int TRY_RCV = 3;
 
   bool isConnectionAlive();
-  bool socketFileExists() const;
+  int socketFileExists();
   bool tryRecv(char *buf, size_t size, const std::string &expected = "");
   void logError(const std::string &msg, const int &error = -1);
   bool connectToSocket();
