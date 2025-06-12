@@ -9,6 +9,7 @@
 #include <map>           // IWYU pragma: keep
 #include <queue>         // IWYU pragma: keep
 #include <sstream>       // IWYU pragma: keep
+#include <stdexcept>     // IWYU pragma: keep
 #include <string>        // IWYU pragma: keep
 #include <unordered_set> // IWYU pragma: keep
 #include <utility>       // IWYU pragma: keep

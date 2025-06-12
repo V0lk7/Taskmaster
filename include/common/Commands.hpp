@@ -11,6 +11,8 @@ public:
   static constexpr auto RESTART = "restart";
   static constexpr auto RELOAD = "reload";
   static constexpr auto QUIT = "quit";
+  static constexpr auto PING = "ping";
+  static constexpr auto PONG = "pong";
 };
 
 #endif

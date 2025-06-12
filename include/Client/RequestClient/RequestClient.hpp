@@ -22,7 +22,7 @@ private:
   int _rcvFd;  // Used to epoll on the nano socket
   State _state;
 
-  static constexpr int TIMEOUT = 10; // 500ms timeout
+  static constexpr int TIMEOUT = 10; // 10ms timeout
   static constexpr int TRY_RCV = 3;
 
   bool isConnectionAlive();

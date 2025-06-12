@@ -1,6 +1,5 @@
 #include "Client/RequestClient/RequestClient.hpp"
 #include "common/Utils.hpp"
-#include <cstddef>
 
 constexpr int RequestClient::TIMEOUT;
 constexpr int RequestClient::TRY_RCV;
