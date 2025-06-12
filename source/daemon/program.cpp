@@ -1,42 +1,7 @@
 #include "daemon/program.hpp"
 
-Program::Program(const std::string &name, const std::string &command, const std::string &workdir,
-	int nbprocess, bool autostart, Restart restart, std::vector<int> exitcodes,
-	int startdelay, int restartretry, int stopsignal, int stoptimeout,
-	const std::string &stdoutfile, const std::string &stderrfile,
-	mode_t umask, std::map<std::string, std::string> env) {
-	this->_name = name;
-	this->_state = State::STOPPED;
-	this->_command = setCommand(command);
-	this->_args = setArgs(command);
-	this->_workdir = workdir;
-	this->_nbprocess = nbprocess;
-	this->_autostart = autostart;
-	this->_restart = restart;
-	this->_exitcodes = exitcodes;
-	this->_startdelay = startdelay;
-	this->_restartretry = restartretry;
-	this->_stopsignal = stopsignal;
-	this->_stoptimeout = stoptimeout;
-	this->_stdoutfile = stdoutfile;
-	this->_stderrfile = stderrfile;
-	this->_umask = umask;
-	this->_env = env;
-	this->_logs = std::vector<Log>();
-	if (!this->_stdoutfile.empty()) {
-		Log log = Log(name, Log::Type::FILE, Log::LogLevel::INFO, this->_stdoutfile);
-		this->_logs.push_back(log);
-	}
-	if (!this->_stderrfile.empty()) {
-		Log log = Log(name, Log::Type::FILE, Log::LogLevel::ERR, this->_stderrfile);
-		this->_logs.push_back(log);
-	}
-	this->_processes = std::vector<std::pair<std::string, int>>();
-}
-
 Program::Program(const std::string &name, const std::string &command) {
 	this->_name = name;
-	this->_state = State::STOPPED;
 	this->_command = setCommand(command);
 	this->_args = setArgs(command);
 	this->_workdir = ".";
@@ -54,7 +19,7 @@ Program::Program(const std::string &name, const std::string &command) {
 	this->_umask = -1;
 	this->_env = std::map<std::string, std::string>();
 	this->_logs = std::vector<Log>();
-	this->_processes = std::vector<std::pair<std::string, int>>();
+	this->_processes = std::vector<Process>();
 }
 
 Program::~Program() {
@@ -93,13 +58,6 @@ std::string Program::setCommand(std::string rawCommand) {
 	return this->_command;
 }
 
-void Program::setState(State state) {
-	this->_state = state;
-}
-
-Program::State Program::getState() const {
-	return this->_state;
-}
 void Program::setName(const std::string &name) {
 	this->_name = name;
 }
@@ -117,6 +75,7 @@ std::string Program::getWorkdir() const {
 }
 void Program::setNbprocess(int nbprocess) {
 	this->_nbprocess = nbprocess;
+	this->addProcess();
 }
 int Program::getNbprocess() const {
 	return this->_nbprocess;
@@ -193,15 +152,35 @@ mode_t Program::getUmask() const {
 	return this->_umask;
 }
 
-void Program::addProcess(const std::string &name, int pid) {
-	std::pair<std::string, int> process(name, pid);
-	this->_processes.push_back(process);
+std::string Program::getStates() {
+	std::string states;
+	for (const auto &process : this->_processes) {
+		states += process.getName() + ": " + convertStateToString(process.getState()) + "\n";
+	}
+	return states;
+}
+
+void Program::addProcess() {
+	for (int i = 0; i < this->_nbprocess; ++i) {
+		Process process(this->_name + "_" + std::to_string(i));
+		this->_processes.push_back(process);
+	}
+}
+
+Process &Program::getProcess(std::string name) {
+	for (auto &process : this->_processes) {
+		if (process.getName() == name) {
+			return process;
+		}
+	}
+	throw std::runtime_error("Process " + name + " not found in program " + this->_name);
 }
 
 void Program::doLog(const std::string &message, Log::LogLevel level) {
+	std::string full_message = "[" + this->_name + "] " + message;
 	for (auto &log : this->_logs) {
 		if (convertLogLevelToSyslog(log.getLogLevel()) >= convertLogLevelToSyslog(level)) {
-			log.doLog(message);
+			log.doLog(full_message);
 		}
 	}
 }
@@ -216,23 +195,6 @@ std::string Program::convertRestartToString(Restart restart) {
 			return "false";
 		default:
 			throw std::invalid_argument("Invalid restart option");
-	}
-}
-
-std::string Program::convertStateToString(State state) {
-	switch (state) {
-		case State::STOPPED:
-			return "STOPPED";
-		case State::RUNNING:
-			return "RUNNING";
-		case State::STARTING:
-			return "STARTING";
-		case State::STOPPING:
-			return "STOPPING";
-		case State::EXITED:
-			return "EXITED";
-		default:
-			throw std::invalid_argument("Invalid state");
 	}
 }
 
@@ -251,75 +213,62 @@ std::string Program::convertStopsignalToString(int signal) {
 	}
 }
 
-int Program::startProcess(){
-	int pid = fork();
-	if (pid == -1) {
-		this->doLog("Error forking program " + this->_name, Log::LogLevel::ERR);
-		return ;
-	} else if (pid == 0) {
-		if (this->_umask != (mode_t)-1) {
-			umask(this->_umask);
+void Program::start(std::string name_process) {
+	std::vector<Process> processes_to_start;
+	if (!name_process.empty()) {
+		try {
+			processes_to_start.push_back(this->getProcess(name_process));
+		} catch (const std::runtime_error &e) {
+			this->doLog(e.what(), Log::LogLevel::ERR);
+			return;
 		}
-		if (this->_env.size() > 0) {
-			for (const auto &pair : this->_env) {
-				setenv(pair.first.c_str(), pair.second.c_str(), 1);
+		this->doLog("Starting process " + name_process, Log::LogLevel::INFO);
+	} else {
+		this->doLog("Starting all processes", Log::LogLevel::INFO);
+		processes_to_start = this->_processes;
+	}
+	std::cout << "Number of processes to start: " << processes_to_start.size() << std::endl;
+	for (auto &process : processes_to_start) {
+		if (process.getState() == Process::State::STOPPED || process.getState() == Process::State::EXITED) {
+			try {
+				this->doLog("Starting process " + process.getName(), Log::LogLevel::INFO);
+				process.start(this->_umask, this->_command, this->_workdir, this->_stdoutfile, this->_stderrfile, this->_env, this->_args);
+				process.setState(Process::State::RUNNING);
+				this->doLog("Process " + process.getName() + " started successfully", Log::LogLevel::INFO);
+			} catch (const std::exception &e) {
+				this->doLog("Error starting process " + process.getName() + ": " + e.what(), Log::LogLevel::ERR);
+				process.setState(Process::State::FATAL);
+				continue;
 			}
-		}
-		if (this->_stdoutfile != "AUTO") {
-			dup2(open(this->_stdoutfile.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644), STDOUT_FILENO);
 		} else {
-			printf("Redirecting stdout to /dev/null\n");
-			dup2(open("/dev/null", O_WRONLY | O_CREAT | O_APPEND, 0644), STDOUT_FILENO);
-		}
-		if (this->_stderrfile != "AUTO") {
-			dup2(open(this->_stderrfile.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644), STDERR_FILENO);
-		} else {
-			dup2(open("/dev/null", O_WRONLY | O_CREAT | O_APPEND, 0644), STDERR_FILENO);
-		}
-		if (this->_workdir != ".") {
-			if (chdir(this->_workdir.c_str()) != 0) {
-				this->doLog("Error changing directory to " + this->_workdir, Log::LogLevel::ERR);
-				return;
-			}
-		}
-		if (execve(this->_command.c_str(), this->_args, nullptr) == -1) {
-			this->doLog("Error executing Program " + this->_name, Log::LogLevel::ERR);
-			this->setState(State::FATAL);
-			exit(1);
+			this->doLog("Process " + process.getName() + " is already running or starting", Log::LogLevel::WARNING);
 		}
 	}
-	return pid;
 }
 
-void Program::start() {
-
-	this->setState(State::STARTING);
-	this->doLog("Starting program " + this->_name, Log::LogLevel::INFO);
-
-
-	this->setState(State::RUNNING);
-	this->doLog("Program " + this->_name + " started with PID " + std::to_string(this->_pid), Log::LogLevel::INFO);
-}
-
-void Program::stop() {
-	this->doLog("Stopping program " + this->_name, Log::LogLevel::INFO);
-	if (this->_state != State::RUNNING && this->_state != State::STARTING) {
-		this->doLog("Program " + this->_name + " is not running : " + convertStateToString(this->_state), Log::LogLevel::ERR);
-		return ;
-	}
-	if (this->_pid != -1) {
-		kill(this->_pid, this->_stopsignal);
-		int status;
-		waitpid(this->_pid, &status, 0);
-		this->doLog("Program " + this->_name + " stopped", Log::LogLevel::INFO);
-		if (WIFEXITED(status)) {
-			this->doLog("Program " + this->_name + " exited with status " + std::to_string(WEXITSTATUS(status)), Log::LogLevel::INFO);
-		} else {
-			this->doLog("Program " + this->_name + " terminated abnormally", Log::LogLevel::ERR);
+void Program::stop(std::string name_process) {
+	std::vector<Process> processes_to_stop;
+	if (!name_process.empty()) {
+		try {
+			processes_to_stop.push_back(this->getProcess(name_process));
+		} catch (const std::runtime_error &e) {
+			this->doLog(e.what(), Log::LogLevel::ERR);
+			return;
 		}
-		this->setPid(-1);
+	} else {
+		this->doLog("Stopping all processes", Log::LogLevel::INFO);
+		processes_to_stop = this->_processes;
 	}
-	this->setState(State::STOPPED);
+	for (auto &process : processes_to_stop) {
+		try {
+			this->doLog("Stopping process " + process.getName(), Log::LogLevel::INFO);
+			process.stop(this->_stopsignal, this->_stoptimeout);
+			this->doLog("Process " + process.getName() + " stopped successfully", Log::LogLevel::INFO);
+		} catch (const std::exception &e) {
+			this->doLog("Error stopping process " + process.getName() + ": " + e.what(), Log::LogLevel::ERR);
+			continue;
+		}
+	}
 }
 
 Program::Restart convertStringToRestart(const std::string &str) {

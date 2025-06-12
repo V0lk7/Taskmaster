@@ -10,6 +10,7 @@ taskmasterctl:
 programs:
   - name: ls #require
     command: /bin/ls -la #require
-    directory: ..
+    directory: .
+    numprocs: 3
     stdout_logfile: ./logs/ls.log
     stderr_logfile: ./logs/ls.err.log

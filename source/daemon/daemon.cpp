@@ -78,7 +78,7 @@ void Daemon::initialStart()
 	for (auto& program : this->programs) {
 		if (program.getAutostart()) {
 			std::cout << "Program " << program.getName() << " will be started." << std::endl;
-			program.start();
+			program.start("");
 		}
 	}
 	this->sendLogs("All processes started.");
@@ -87,10 +87,8 @@ void Daemon::initialStart()
 void Daemon::stopAllPrograms()
 {
 	for (auto &program : this->programs) {
-		if (program.getState() == Program::State::RUNNING || program.getState() == Program::State::STARTING) {
-			program.stop();
-			this->sendLogs("Process " + program.getName() + " stopped.");
-		}
+		program.stop("");
+		this->sendLogs("Program " + program.getName() + " stopped.");
 	}
 }
 
@@ -124,7 +122,7 @@ std::string Daemon::stringStatusProgram(std::string name)
 {
 	for (auto &program : this->programs) {
 		if (program.getName() == name) {
-			return "Process " + program.getName() + " is " + program.convertStateToString(program.getState());
+			return "Program " + program.getName() + " is : \n" + program.getStates();
 		}
 	}
 	throw std::runtime_error("Process " + name + " not found.");
@@ -132,9 +130,9 @@ std::string Daemon::stringStatusProgram(std::string name)
 
 std::string Daemon::stringStatusAllPrograms()
 {
-	std::string status = "Processes status:\n";
+	std::string status = "Programs status:\n";
 	for (auto &program : this->programs) {
-		status += "Process " + program.getName() + " is " + program.convertStateToString(program.getState()) + "\n";
+		status += "Program " + program.getName() + " is : \n" + program.getStates() + "\n";
 	}
 	return status;
 }

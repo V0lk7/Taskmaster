@@ -1,48 +1,20 @@
 #ifndef PROGRAM_HPP
 #define PROGRAM_HPP
 
-#include <string>
-#include <map>
-#include <vector>
-#include <sys/types.h>
-#include <stdexcept>
-#include <sys/signal.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <cstring>
-#include <fcntl.h>
-#include <sstream>
-#include <iomanip>
 #include "log.hpp"
+#include "process.hpp"
 
 class Program {
 	public:
-		enum class State {
-			STOPPED,
-			RUNNING,
-			STARTING,
-			STOPPING,
-			EXITED,
-			FATAL
-		};
 		enum class Restart {
 			TRUE,
 			UNEXPECTED,
 			FALSE
 		};
 
-
-
-		Program(const std::string &name, const std::string &command, const std::string &workdir,
-				int nbprocess, bool autostart, Restart restart, std::vector<int> exitcodes,
-				int startdelay, int restartretry, int stopsignal, int stoptimeout,
-				const std::string &stdoutfile, const std::string &stderrfile,
-				mode_t umask, std::map<std::string, std::string> env);
 		Program(const std::string &name, const std::string &command);
 		~Program();
 
-		void setState(State state);
-		State getState() const;
 		void setName(const std::string &name);
 		std::string getName() const;
 		std::string getCommand() const;
@@ -71,19 +43,17 @@ class Program {
 		void addEnv(const std::string &key, const std::string &value);
 		void setUmask(mode_t umask);
 		mode_t getUmask() const;
-		void addProcess(const std::string &name, int pid);
+		std::string getStates();
 
 		void doLog(const std::string &message, Log::LogLevel level);
 		std::string convertRestartToString(Restart restart);
-		std::string convertStateToString(State state);
 		std::string convertStopsignalToString(int signal);
-		void start();
-		void stop();
+		void start(std::string name_process);
+		void stop(std::string name_process);
 		void printProgram();
 
 	private:
 		std::string _name;
-		State _state;
 		std::string _command;
 		char** _args;
 		std::string _workdir;
@@ -100,10 +70,11 @@ class Program {
 		mode_t _umask; //The umask to set for the process
 		std::map<std::string, std::string> _env; //Environment variables to set for the process
 		std::vector<Log> _logs; //Logs for the process
-		std::vector<std::pair<std::string, int>> _processes; //Vector of pairs of process name and its PID
+		std::vector<Process> _processes; //Vector of processes
 		char** setArgs(std::string rawCommand);
 		std::string setCommand(std::string rawCommand);
-		int Program::startProcess();
+		void addProcess();
+		Process &getProcess(std::string name);
 	};
 
 	int convertStringToStopsignal(const std::string &str);
