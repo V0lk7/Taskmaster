@@ -1,6 +1,6 @@
 FROM ubuntu:24.04
 
-RUN apt update && apt install -y build-essential clang cmake git libreadline-dev zsh
+RUN apt update && apt install -y build-essential clang cmake git libreadline-dev zsh curl
 
 RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
 
