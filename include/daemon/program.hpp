@@ -43,9 +43,10 @@ class Program {
 		void addEnv(const std::string &key, const std::string &value);
 		void setUmask(mode_t umask);
 		mode_t getUmask() const;
+		void addLog(const Log &log);
 		std::string getStates();
 
-		void doLog(const std::string &message, Log::LogLevel level);
+		void doLog(const std::string &message, Log::LogLevel level, std::string name_process);
 		std::string convertRestartToString(Restart restart);
 		std::string convertStopsignalToString(int signal);
 		void start(std::string name_process);

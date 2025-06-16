@@ -18,7 +18,8 @@ class Daemon {
 		std::string getSocketPath() const;
 		int getSocketFd() const;
 		void setSocketFd(int socketFd);
-		void sendLogs(const std::string &message);
+		std::vector<Log> getLogs() const;
+		void sendLogs(const std::string &message, std::string log_levelmsg);
 		void addProgram(Program &program);
 		void removeProgram(Program &program);
 		void initialStart();

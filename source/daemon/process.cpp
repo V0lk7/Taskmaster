@@ -46,7 +46,6 @@ void Process::start(mode_t umask_process, const std::string &command, const std:
 		if (stdoutfile != "AUTO") {
 			dup2(open(stdoutfile.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644), STDOUT_FILENO);
 		} else {
-			printf("Redirecting stdout to /dev/null\n");
 			dup2(open("/dev/null", O_WRONLY | O_CREAT | O_APPEND, 0644), STDOUT_FILENO);
 		}
 		if (stderrfile != "AUTO") {

@@ -45,9 +45,6 @@ Daemon::~Daemon()
 	if (!this->socketPath.empty()) {
 		unlink(this->socketPath.c_str());
 	}
-	for (auto &logger : this->loggers) {
-		logger.doLog("Daemon destroyed.");
-	}
 }
 
 void Daemon::setSocketPath(std::string socketPath)
@@ -66,10 +63,27 @@ void Daemon::setSocketFd(int socketFd)
 {
 	this->socketFd = socketFd;
 }
-void Daemon::sendLogs(const std::string &message)
+std::vector<Log> Daemon::getLogs() const
 {
+	return this->loggers;
+}
+
+void Daemon::sendLogs(const std::string &message, std::string log_levelmsg)
+{
+	if (log_levelmsg.empty()) {
+		log_levelmsg = "INFO";
+	}
+	time_t now = time(nullptr);
+	std::tm *ltm = std::localtime(&now);
+	char time_buf[20];
+	std::strftime(time_buf, sizeof(time_buf), "%d:%m:%Y %H:%M:%S", ltm);
+	std::string time_str(time_buf);
+	std::string new_message = time_str + " - [taskmasterd] " + message;
+	Log::LogLevel logLevel = convertStringToLogLevel(log_levelmsg);
 	for (auto &logger : this->loggers) {
-		logger.doLog(message);
+		if (convertLogLevelToSyslog(logger.getLogLevel()) >= convertLogLevelToSyslog(logLevel)) {
+			logger.doLog(new_message);
+		}
 	}
 }
 
@@ -77,18 +91,17 @@ void Daemon::initialStart()
 {
 	for (auto& program : this->programs) {
 		if (program.getAutostart()) {
-			std::cout << "Program " << program.getName() << " will be started." << std::endl;
 			program.start("");
 		}
 	}
-	this->sendLogs("All processes started.");
+	this->sendLogs("All processes started.", "INFO");
 }
 
 void Daemon::stopAllPrograms()
 {
 	for (auto &program : this->programs) {
 		program.stop("");
-		this->sendLogs("Program " + program.getName() + " stopped.");
+		this->sendLogs("Program " + program.getName() + " stopped.", "INFO");
 	}
 }
 

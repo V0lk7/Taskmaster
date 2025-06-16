@@ -133,17 +133,9 @@ std::map<std::string, std::string> Program::getEnv() const {
 }
 void Program::setStdoutfile(const std::string &stdoutfile) {
 	this->_stdoutfile = stdoutfile;
-	if (this->_stdoutfile != "AUTO") {
-		Log log = Log(this->_name, Log::Type::FILE, Log::LogLevel::INFO, this->_stdoutfile);
-		this->_logs.push_back(log);
-	}
 }
 void Program::setStderrfile(const std::string &stderrfile) {
 	this->_stderrfile = stderrfile;
-	if (this->_stderrfile != "AUTO") {
-		Log log = Log(this->_name, Log::Type::FILE, Log::LogLevel::ERR, this->_stderrfile);
-		this->_logs.push_back(log);
-	}
 }
 void Program::setUmask(mode_t umask) {
 	this->_umask = umask;
@@ -176,8 +168,20 @@ Process &Program::getProcess(std::string name) {
 	throw std::runtime_error("Process " + name + " not found in program " + this->_name);
 }
 
-void Program::doLog(const std::string &message, Log::LogLevel level) {
-	std::string full_message = "[" + this->_name + "] " + message;
+void Program::addLog(const Log &log) {
+	this->_logs.push_back(log);
+}
+
+void Program::doLog(const std::string &message, Log::LogLevel level, std::string name_process) {
+	time_t now = time(nullptr);
+	std::tm *ltm = std::localtime(&now);
+	char time_buf[20];
+	std::strftime(time_buf, sizeof(time_buf), "%d:%m:%Y %H:%M:%S", ltm);
+	std::string time_str(time_buf);
+	if (name_process.empty()) {
+		name_process = "main";
+	}
+	std::string full_message = time_str + " - [" + this->_name + ":" + name_process + "] " + message;
 	for (auto &log : this->_logs) {
 		if (convertLogLevelToSyslog(log.getLogLevel()) >= convertLogLevelToSyslog(level)) {
 			log.doLog(full_message);
@@ -219,29 +223,28 @@ void Program::start(std::string name_process) {
 		try {
 			processes_to_start.push_back(this->getProcess(name_process));
 		} catch (const std::runtime_error &e) {
-			this->doLog(e.what(), Log::LogLevel::ERR);
+			this->doLog(e.what(), Log::LogLevel::ERR, name_process);
 			return;
 		}
-		this->doLog("Starting process " + name_process, Log::LogLevel::INFO);
+		this->doLog("Starting process", Log::LogLevel::INFO, name_process);
 	} else {
-		this->doLog("Starting all processes", Log::LogLevel::INFO);
+		this->doLog("Starting all processes", Log::LogLevel::INFO, "");
 		processes_to_start = this->_processes;
 	}
-	std::cout << "Number of processes to start: " << processes_to_start.size() << std::endl;
 	for (auto &process : processes_to_start) {
 		if (process.getState() == Process::State::STOPPED || process.getState() == Process::State::EXITED) {
 			try {
-				this->doLog("Starting process " + process.getName(), Log::LogLevel::INFO);
+				this->doLog("Starting process", Log::LogLevel::INFO,  process.getName());
 				process.start(this->_umask, this->_command, this->_workdir, this->_stdoutfile, this->_stderrfile, this->_env, this->_args);
 				process.setState(Process::State::RUNNING);
-				this->doLog("Process " + process.getName() + " started successfully", Log::LogLevel::INFO);
+				this->doLog("Process started successfully", Log::LogLevel::INFO, process.getName());
 			} catch (const std::exception &e) {
-				this->doLog("Error starting process " + process.getName() + ": " + e.what(), Log::LogLevel::ERR);
+				this->doLog(std::string("Error starting process: ") + e.what(), Log::LogLevel::ERR, process.getName());
 				process.setState(Process::State::FATAL);
 				continue;
 			}
 		} else {
-			this->doLog("Process " + process.getName() + " is already running or starting", Log::LogLevel::WARNING);
+			this->doLog("Process is already running or starting", Log::LogLevel::WARNING, process.getName());
 		}
 	}
 }
@@ -252,20 +255,20 @@ void Program::stop(std::string name_process) {
 		try {
 			processes_to_stop.push_back(this->getProcess(name_process));
 		} catch (const std::runtime_error &e) {
-			this->doLog(e.what(), Log::LogLevel::ERR);
+			this->doLog(e.what(), Log::LogLevel::ERR, name_process);
 			return;
 		}
 	} else {
-		this->doLog("Stopping all processes", Log::LogLevel::INFO);
+		this->doLog("Stopping all processes", Log::LogLevel::INFO, "");
 		processes_to_stop = this->_processes;
 	}
 	for (auto &process : processes_to_stop) {
 		try {
-			this->doLog("Stopping process " + process.getName(), Log::LogLevel::INFO);
+			this->doLog("Stopping process", Log::LogLevel::INFO, process.getName());
 			process.stop(this->_stopsignal, this->_stoptimeout);
-			this->doLog("Process " + process.getName() + " stopped successfully", Log::LogLevel::INFO);
+			this->doLog("Process stopped successfully", Log::LogLevel::INFO, process.getName());
 		} catch (const std::exception &e) {
-			this->doLog("Error stopping process " + process.getName() + ": " + e.what(), Log::LogLevel::ERR);
+			this->doLog(std::string("Error stopping process: ") + e.what(), Log::LogLevel::ERR, process.getName());
 			continue;
 		}
 	}

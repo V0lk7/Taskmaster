@@ -49,18 +49,21 @@ Daemon *parsingFile(std::string config_file) {
 	if (!config) {
 		throw std::runtime_error("Error: Unable to load config file.");
 	}
-		std::cout << "Parsing Socket" << std::endl;
-		std::string socket_path = parsingSocket(config["unix_http_server"]);
-		std::cout << "Parsing Taskmasterd" << std::endl;
-		Log log_info = parsingTaskmasterd(config["taskmasterd"]);
-		std::cout << "Parsing Process" << std::endl;
-		std::vector<Program> programs = parsingPrograms(config["programs"]);
-		std::cout << "Daemon creation" << std::endl;
-		Daemon *daemon = new Daemon(socket_path, log_info);
-		daemon->sendLogs("Daemon started.");
-		for (auto &program : programs) {
-			daemon->addProgram(program);
-		}
-		// daemon.printDaemon();
+	std::cout << "Parsing Socket" << std::endl;
+	std::string socket_path = parsingSocket(config["unix_http_server"]);
+	std::cout << "Parsing Taskmasterd" << std::endl;
+	Log log_daemon = parsingTaskmasterd(config["taskmasterd"]);
+	std::cout << "Daemon creation" << std::endl;
+	Daemon *daemon = new Daemon(socket_path, log_daemon);
+	daemon->sendLogs("Daemon initialized with socket path: " + socket_path, "INFO");
+	daemon->sendLogs("Parsing programs...", "INFO");
+	std::vector<Program> programs = parsingPrograms(config["programs"], daemon->getLogs());
+	if (programs.empty())
+		daemon->sendLogs("No programs found in the configuration file.", "WARNING");
+	daemon->sendLogs("Daemon started.", "INFO");
+	for (auto &program : programs) {
+		daemon->addProgram(program);
+	}
+	// daemon.printDaemon();
 	return daemon;
   }

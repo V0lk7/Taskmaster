@@ -18,15 +18,15 @@ int main(int argc, char **argv) {
   try {
   	Daemon *daemon = parsingFile(config_file);
   	daemon->initialStart();
-  	std::cout << "Daemon started." << std::endl;
+  	daemon->sendLogs("Daemon started successfully.", "INFO");
 	sleep(10);
-	std::cout << daemon->stringStatusAllPrograms() << std::endl;;
-	std::cout << "Daemon stopped." << std::endl;
+	daemon->sendLogs("Daemon shutting down.", "INFO");
 	delete daemon;
   }
   catch (const std::exception &e) {
-  	std::cerr << "Error: " << e.what() << std::endl;
-  	return 1;
+	std::cerr << "Error: " << e.what() << std::endl;
+	syslog(LOG_ERR, "Error: %s", e.what());
+	return 1;
   }
   return 0;
 }

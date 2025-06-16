@@ -5,6 +5,6 @@
 #include "../daemon.hpp"
 
 Daemon *parsingFile(std::string config_file);
-std::vector<Program> parsingPrograms(YAML::Node program);
+std::vector<Program> parsingPrograms(YAML::Node programs, std::vector<Log> loggersDaemon);
 
 #endif
