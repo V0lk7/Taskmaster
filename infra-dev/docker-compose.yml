@@ -1,0 +1,7 @@
+services :
+  taskmaster:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ..:/app/taskmaster

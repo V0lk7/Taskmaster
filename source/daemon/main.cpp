@@ -32,11 +32,9 @@ int main(int argc, char **argv) {
 
     daemon->start();
 
-    std::cout << daemon->stringStatusAllPrograms() << std::endl;
-    std::cout << "Daemon stopped." << std::endl;
-    delete daemon;
   } catch (const std::exception &e) {
     std::cerr << "Error: " << e.what() << std::endl;
+    syslog(LOG_ERR, "Error: %s", e.what());
     return 1;
   }
   return 0;
@@ -62,6 +60,7 @@ static void signalHandler(int signal) {
   Daemon *daemon = daemonHandler.load();
 
   if (signal == SIGINT || signal == SIGQUIT) {
+    daemon->sendLogs("Daemon shutting down.", "INFO");
     daemon->clean();
     delete daemon;
     exit(0);

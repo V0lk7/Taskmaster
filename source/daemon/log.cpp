@@ -95,7 +95,7 @@ int convertLogLevelToSyslog(Log::LogLevel level) {
 }
 
 Log::LogLevel convertStringToLogLevel(const std::string &str) {
-	if (str == "ERR") {
+	if (str == "ERROR") {
 		return Log::LogLevel::ERR;
 	} else if (str == "WARNING") {
 		return Log::LogLevel::WARNING;

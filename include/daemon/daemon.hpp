@@ -23,6 +23,9 @@ public:
   // void stopProgram(std::string);
   // void stopProgram(std::vector<std::string> const &);
 
+  void addProgram(Program &program);
+  void removeProgram(Program &program);
+
   void signalReceived();
 
   void setSocketPath(std::string socketPath);
@@ -31,10 +34,8 @@ public:
   int getSocketFd() const;
   void setSocketFd(int socketFd);
 
-  void sendLogs(const std::string &message);
-
-  void addProgram(Program &program);
-  void removeProgram(Program &program);
+  void sendLogs(const std::string &message, std::string log_levelmsg);
+  std::vector<Log> getLogs() const;
   void printDaemon();
   std::string stringStatusProgram(std::string name);
   std::string stringStatusAllPrograms();

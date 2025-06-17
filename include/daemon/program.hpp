@@ -1,52 +1,22 @@
 #ifndef PROGRAM_HPP
 #define PROGRAM_HPP
 
-#include <string>
-#include <map>
-#include <vector>
-#include <sys/types.h>
-#include <stdexcept>
-#include <sys/signal.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <cstring>
-#include <fcntl.h>
-#include <sstream>
-#include <iomanip>
 #include "log.hpp"
+#include "process.hpp"
 
 class Program {
 	public:
-		enum class State {
-			STOPPED,
-			RUNNING,
-			STARTING,
-			STOPPING,
-			EXITED,
-			FATAL
-		};
 		enum class Restart {
 			TRUE,
 			UNEXPECTED,
 			FALSE
 		};
 
-
-
-		Program(const std::string &name, const std::string &command, const std::string &workdir,
-				int nbprocess, bool autostart, Restart restart, std::vector<int> exitcodes,
-				int startdelay, int restartretry, int stopsignal, int stoptimeout,
-				const std::string &stdoutfile, const std::string &stderrfile,
-				mode_t umask, std::map<std::string, std::string> env);
 		Program(const std::string &name, const std::string &command);
 		~Program();
 
-		void setState(State state);
-		State getState() const;
 		void setName(const std::string &name);
 		std::string getName() const;
-		void setPid(int pid);
-		int getPid() const;
 		std::string getCommand() const;
 		void setWorkdir(const std::string &workdir);
 		std::string getWorkdir() const;
@@ -73,21 +43,20 @@ class Program {
 		void addEnv(const std::string &key, const std::string &value);
 		void setUmask(mode_t umask);
 		mode_t getUmask() const;
+		void addLog(const Log &log);
+		std::string getStates();
 
-		void doLog(const std::string &message, Log::LogLevel level);
+		void doLog(const std::string &message, Log::LogLevel level, std::string name_process);
 		std::string convertRestartToString(Restart restart);
-		std::string convertStateToString(State state);
 		std::string convertStopsignalToString(int signal);
-		void start();
-		void stop();
+		void start(std::string name_process);
+		void stop(std::string name_process);
 		void printProgram();
 
 	private:
 		std::string _name;
-		int _pid;
-		State _state;
 		std::string _command;
-		char** _args;
+		// std::vector<char*> _args;
 		std::string _workdir;
 		int _nbprocess; //How many processes to start
 		bool _autostart; //Whether to start this program at launch or not
@@ -102,9 +71,11 @@ class Program {
 		mode_t _umask; //The umask to set for the process
 		std::map<std::string, std::string> _env; //Environment variables to set for the process
 		std::vector<Log> _logs; //Logs for the process
-
-		char** setArgs(std::string rawCommand);
-		std::string setCommand(std::string rawCommand);
+		std::vector<Process> _processes; //Vector of processes
+		// std::vector<char*> setArgs(std::string rawCommand);
+		// std::string setCommand(std::string rawCommand);
+		void addProcess();
+		Process &getProcess(std::string name);
 	};
 
 	int convertStringToStopsignal(const std::string &str);

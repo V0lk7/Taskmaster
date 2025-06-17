@@ -29,9 +29,6 @@ Daemon::~Daemon() {
   if (!this->socketPath.empty()) {
     (void)unlink(this->socketPath.c_str());
   }
-  for (auto &logger : this->loggers) {
-    logger.doLog("Daemon destroyed.");
-  }
 }
 
 void Daemon::setIpc() {
@@ -94,22 +91,43 @@ void Daemon::checkSocketFile() {
 void Daemon::setSocketPath(std::string socketPath) {
   this->socketPath = socketPath;
 }
-
 std::string Daemon::getSocketPath() const { return this->socketPath; }
-
 int Daemon::getSocketFd() const { return this->socketFd; }
-
 void Daemon::setSocketFd(int socketFd) { this->socketFd = socketFd; }
+std::vector<Log> Daemon::getLogs() const { return this->loggers; }
 
-void Daemon::sendLogs(const std::string &message) {
+void Daemon::sendLogs(const std::string &message, std::string log_levelmsg) {
+  if (log_levelmsg.empty()) {
+    log_levelmsg = "INFO";
+  }
+
+  time_t now = time(nullptr);
+  std::tm *ltm = std::localtime(&now);
+  char time_buf[20];
+  std::strftime(time_buf, sizeof(time_buf), "%d:%m:%Y %H:%M:%S", ltm);
+  std::string time_str(time_buf);
+
+  std::string new_message = time_str + " - [taskmasterd] " + message;
+  Log::LogLevel logLevel = convertStringToLogLevel(log_levelmsg);
+
   for (auto &logger : this->loggers) {
-    logger.doLog(message);
+    if (convertLogLevelToSyslog(logger.getLogLevel()) >=
+        convertLogLevelToSyslog(logLevel)) {
+      logger.doLog(new_message);
+    }
+  }
+}
+
+void Daemon::stopAllPrograms() {
+  for (auto &program : this->programs) {
+    program.stop("");
+    this->sendLogs("Program " + program.getName() + " stopped.", "INFO");
   }
 }
 
 void Daemon::start() {
   this->startAllPrograms();
-  std::cout << "Daemon started." << std::endl;
+  sendLogs("Daemon started successfully.", "INFO");
 
   while (true) {
     // update program first
@@ -173,23 +191,31 @@ void Daemon::processMessage(std::string const message) {
   }
 }
 
-void Daemon::startAllPrograms() { // TODO Need to start only program which are
-                                  // needed
+std::string Daemon::stringStatusProgram(std::string name) {
   for (auto &program : this->programs) {
-    if (program.getAutostart()) {
-      std::cout << "Program " << program.getName() << " will be started."
-                << std::endl;
-      program.start();
+    if (program.getName() == name) {
+      return "Program " + program.getName() + " is : \n" + program.getStates();
     }
   }
-  this->sendLogs("All processes started.");
+  throw std::runtime_error("Process " + name + " not found.");
 }
 
-void Daemon::stopAllPrograms() {
+std::string Daemon::stringStatusAllPrograms() {
+  std::string status = "Programs status:\n";
   for (auto &program : this->programs) {
-    program.stop();
-    this->sendLogs("Process " + program.getName() + " stopped.");
+    status += "Program " + program.getName() + " is : \n" +
+              program.getStates() + "\n";
   }
+  return status;
+}
+
+void Daemon::startAllPrograms() {
+  for (auto &program : this->programs) {
+    if (program.getAutostart()) {
+      program.start("");
+    }
+  }
+  this->sendLogs("All programs started.", "INFO");
 }
 
 void Daemon::addProgram(Program &program) { this->programs.push_back(program); }
@@ -211,25 +237,6 @@ void Daemon::printDaemon() {
     std::cout << "============================" << std::endl;
     process.printProgram();
   }
-}
-
-std::string Daemon::stringStatusProgram(std::string name) {
-  for (auto &program : this->programs) {
-    if (program.getName() == name) {
-      return "Process " + program.getName() + " is " +
-             program.convertStateToString(program.getState());
-    }
-  }
-  throw std::runtime_error("Process " + name + " not found.");
-}
-
-std::string Daemon::stringStatusAllPrograms() {
-  std::string status = "Processes status:\n";
-  for (auto &program : this->programs) {
-    status += "Process " + program.getName() + " is " +
-              program.convertStateToString(program.getState()) + "\n";
-  }
-  return status;
 }
 
 std::vector<Program> Daemon::getPrograms() { return this->programs; }
