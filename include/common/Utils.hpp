@@ -3,6 +3,8 @@
 
 #include "pch.hpp"
 
+extern char **environ;
+
 class Utils {
 public:
   static std::vector<std::string> split(std::string const &input,

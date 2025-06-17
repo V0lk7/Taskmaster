@@ -33,7 +33,7 @@ class Process {
 		int getPid() const;
 		std::string getName() const;
 
-		void start(mode_t umask_process, const std::string &command, const std::string &workdir, const std::string &stdoutfile, const std::string &stderrfile, const std::map<std::string, std::string> &env, char **args);
+		void start(mode_t umask_process, const std::string &workdir, const std::string &stdoutfile, const std::string &stderrfile, const std::map<std::string, std::string> &env, std::string command);
 		void stop(int stopsignal, int stoptimeout);
 
 	private:

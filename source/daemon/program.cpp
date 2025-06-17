@@ -2,8 +2,7 @@
 
 Program::Program(const std::string &name, const std::string &command) {
 	this->_name = name;
-	this->_command = setCommand(command);
-	this->_args = setArgs(command);
+	this->_command = command;
 	this->_workdir = ".";
 	this->_nbprocess = 1;
 	this->_autostart = true;
@@ -23,39 +22,6 @@ Program::Program(const std::string &name, const std::string &command) {
 }
 
 Program::~Program() {
-}
-
-char **Program::setArgs(std::string rawCommand) {
-	std::string arg;
-	std::vector<std::string> args;
-	size_t pos = 0;
-	while ((pos = rawCommand.find(" ")) != std::string::npos) {
-		arg = rawCommand.substr(0, pos);
-		args.push_back(arg);
-		rawCommand.erase(0, pos + 1);
-	}
-	args.push_back(rawCommand);
-	char **argv = new char *[args.size() + 1];
-	for (size_t i = 0; i < args.size(); ++i) {
-		argv[i] = new char[args[i].length() + 1];
-		strcpy(argv[i], args[i].c_str());
-	}
-	argv[args.size()] = nullptr;
-	return argv;
-}
-
-std::string Program::setCommand(std::string rawCommand) {
-	std::string command = rawCommand;
-	size_t pos = command.find(" ");
-	if (pos != std::string::npos) {
-		this->_command = command.substr(0, pos);
-		command.erase(0, pos + 1);
-	} else {
-		this->_command = command;
-		command.clear();
-	}
-	this->_args = setArgs(command);
-	return this->_command;
 }
 
 void Program::setName(const std::string &name) {
@@ -235,7 +201,7 @@ void Program::start(std::string name_process) {
 		if (process.getState() == Process::State::STOPPED || process.getState() == Process::State::EXITED) {
 			try {
 				this->doLog("Starting process", Log::LogLevel::INFO,  process.getName());
-				process.start(this->_umask, this->_command, this->_workdir, this->_stdoutfile, this->_stderrfile, this->_env, this->_args);
+				process.start(this->_umask, this->_workdir, this->_stdoutfile, this->_stderrfile, this->_env, this->_command);
 				process.setState(Process::State::RUNNING);
 				this->doLog("Process started successfully", Log::LogLevel::INFO, process.getName());
 			} catch (const std::exception &e) {

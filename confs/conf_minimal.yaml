@@ -14,3 +14,14 @@ programs:
     numprocs: 3
     stdout_logfile: ./logs/ls.log
     stderr_logfile: ./logs/ls.err.log
+  - name: echoenv
+    command: /bin/echo $FOO
+    numprocs: 1
+    environment:
+      FOO: bar
+    stdout_logfile: ./logs/echoenv.log
+    stderr_logfile: ./logs/echoenv.err.log
+  - name: echoenv2
+    command: /bin/echo $PATH
+    numprocs: 1
+    stdout_logfile: ./logs/echoenv2.log
