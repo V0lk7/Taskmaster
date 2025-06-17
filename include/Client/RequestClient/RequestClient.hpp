@@ -23,7 +23,6 @@ private:
   State _state;
 
   static constexpr int TIMEOUT = 10; // 10ms timeout
-  static constexpr int TRY_RCV = 3;
 
   static constexpr char IPC[] = "ipc://";
   static constexpr char UNIX[] = "unix://";

@@ -1,6 +1,7 @@
 #include "daemon/daemon.hpp"
 #include "common/Commands.hpp"
 #include "common/Utils.hpp"
+#include "nanomsg/nn.h"
 
 constexpr char Daemon::IPC[];
 constexpr char Daemon::UNIX[];
@@ -109,71 +110,71 @@ void Daemon::sendLogs(const std::string &message) {
 void Daemon::start() {
   this->startAllPrograms();
   std::cout << "Daemon started." << std::endl;
-  int ret = 0;
-  void *buffer = nullptr;
 
   while (true) {
     // update program first
     // check message received from socket
-    ret = nn_poll(&(this->pfd), 1, TIMEOUT);
-
-    if (ret == -1) {
-      // error case
+    if (!this->listenClients()) {
       clean();
-    } else if (ret == 0) {
-      // timed out, on continue
-      continue;
-    }
-    if (this->pfd.revents & NN_POLLIN) {
-      for (int i = 0; i < TRY_RCV; i++) {
-        int bytes = nn_recv(this->socketFd, &buffer, NN_MSG, 0);
-
-        if (bytes > 0) {
-
-          std::string message(static_cast<char *>(buffer), bytes);
-          nn_freemsg(buffer);
-          buffer = nullptr;
-          this->processMessage(message);
-          break;
-        }
-      }
+      return;
     }
   }
 }
 
-void Daemon::processMessage(std::string const &message) {
-  std::vector<std::string> keys = Utils::split(message, " ");
+bool Daemon::listenClients() {
+  int ret = nn_poll(&(this->pfd), 1, TIMEOUT);
 
-  std::cout << "Key[0] = |" << keys[0] << "|" << std::endl;
-  std::cout << "ping = |" << Commands::PING << "|" << std::endl;
-  std::cout << "wtf = " << keys[0].compare(0, keys[0].size(), Commands::PING)
-            << std::endl;
-  for (size_t i = 0; i < keys[0].size(); ++i) {
-    printf("[%02X] ", static_cast<unsigned char>(keys[0][i]));
+  if (ret == -1) {
+    // error case
+    return false;
+  } else if (ret == 0) {
+    // timed out, we continue
+    return true;
   }
-  printf("\n");
+  if (this->pfd.revents & NN_POLLIN) {
+    void *buffer = nullptr;
+    int bytes = nn_recv(this->socketFd, &buffer, NN_MSG, 0);
+
+    if (bytes >= 0 && buffer != nullptr) {
+      std::string message(static_cast<char *>(buffer), bytes);
+      nn_freemsg(buffer);
+      buffer = nullptr;
+      this->processMessage(message);
+    }
+  }
+  return true;
+}
+
+void Daemon::processMessage(std::string const message) {
+  std::vector<std::string> keys = Utils::split(message, " ");
+  std::string answer;
+
   if (keys[0] == "ping") {
     std::cout << "Command \"PING\" received: sending PONG" << std::endl;
-    std::string snd(Commands::PONG);
-    if (nn_send(this->socketFd, snd.c_str(), snd.size(), 0) < 1) {
-      std::cout << "Et merde" << std::endl;
-    }
-  } else if (keys[0].compare(0, keys[0].size(), Commands::START) == 0) {
+    answer = Commands::PONG;
+  } else if (keys[0] == Commands::START) {
     std::cout << "Command \"START\" received" << std::endl;
-  } else if (keys[0].compare(0, keys[0].size(), Commands::STOP) == 0) {
+    answer = "OK";
+  } else if (keys[0] == Commands::STOP) {
     std::cout << "Command \"STOP\" received" << std::endl;
-  } else if (keys[0].compare(0, keys[0].size(), Commands::STATUS) == 0) {
+    answer = "OK";
+  } else if (keys[0] == Commands::STATUS) {
     std::cout << "Command \"STATUS\" received" << std::endl;
-  } else if (keys[0].compare(0, keys[0].size(), Commands::RESTART) == 0) {
-    std::cout << "Command \"RESTART\" received" << std::endl;
-  } else if (keys[0].compare(0, keys[0].size(), Commands::RELOAD) == 0) {
+    answer = "OK";
+  } else if (keys[0] == Commands::RELOAD) {
     std::cout << "Command \"RELOAD\" received" << std::endl;
+    answer = "OK";
   } else {
     std::cout << "Unknown message : |" << message << "|" << std::endl;
+    answer = "KO";
+  }
+  if (nn_send(this->socketFd, answer.c_str(), answer.size(), 0) < 1) {
+    std::cout << "Et merde" << std::endl;
   }
 }
 
-void Daemon::startAllPrograms() {
+void Daemon::startAllPrograms() { // TODO Need to start only program which are
+                                  // needed
   for (auto &program : this->programs) {
     if (program.getAutostart()) {
       std::cout << "Program " << program.getName() << " will be started."

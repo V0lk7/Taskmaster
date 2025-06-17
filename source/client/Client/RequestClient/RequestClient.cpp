@@ -157,17 +157,17 @@ std::string RequestClient::sendMsg(std::vector<std::string> const &msg,
 }
 
 bool RequestClient::tryRecv(std::string &answer, const std::string &expected) {
+
   void *buffer = nullptr;
+  int bytes = nn_recv(_sockFd, &buffer, NN_MSG, 0);
 
-  for (int i = 0; i < TRY_RCV; ++i) {
-    if (nn_recv(_sockFd, &buffer, NN_MSG, 0) > 0) {
-      answer = std::string(static_cast<char *>(buffer));
-      nn_freemsg(buffer);
-      buffer = nullptr;
+  if (bytes >= 0 && buffer != nullptr) {
+    answer = std::string(static_cast<char *>(buffer), bytes);
+    nn_freemsg(buffer);
+    buffer = nullptr;
 
-      if (expected.empty() || expected == answer) {
-        return true;
-      }
+    if (expected.empty() || expected == answer) {
+      return true;
     }
   }
   return false;

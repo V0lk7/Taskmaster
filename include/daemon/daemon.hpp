@@ -15,18 +15,15 @@ public:
   void stop();
   void clean();
 
-  void startAllPrograms();
-  void startProgram(std::string const &);
-  void startProgram(std::vector<std::string> const &);
+  void startAllPrograms(); // initial start
+  // void startProgram(std::string const &);
+  // void startProgram(std::vector<std::string> const &);
 
-  //  void stopAllPrograms();
-  void stopProgram(std::string);
-  void stopProgram(std::vector<std::string> const &);
+  void stopAllPrograms();
+  // void stopProgram(std::string);
+  // void stopProgram(std::vector<std::string> const &);
 
   void signalReceived();
-
-  // void initialStart();    // -> become startAllPrograms()
-  void stopAllPrograms(); // -> become stop()
 
   void setSocketPath(std::string socketPath);
   std::string getSocketPath() const;
@@ -50,7 +47,6 @@ private:
   struct nn_pollfd pfd;
 
   static constexpr int TIMEOUT = 10;
-  static constexpr int TRY_RCV = 3;
   static constexpr char IPC[] = "ipc://";
   static constexpr char UNIX[] = "unix://";
 
@@ -61,7 +57,8 @@ private:
   void checkSocketFile();
   void formatSocketFileName();
 
-  void processMessage(std::string const &);
+  bool listenClients();
+  void processMessage(std::string const);
 };
 
 #endif
