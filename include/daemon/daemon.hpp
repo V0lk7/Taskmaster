@@ -51,6 +51,8 @@ private:
 
   static constexpr int TIMEOUT = 10;
   static constexpr int TRY_RCV = 3;
+  static constexpr char IPC[] = "ipc://";
+  static constexpr char UNIX[] = "unix://";
 
   std::vector<Log> loggers;
   std::vector<Program> programs;

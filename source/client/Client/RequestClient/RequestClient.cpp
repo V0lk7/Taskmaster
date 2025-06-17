@@ -1,8 +1,9 @@
 #include "Client/RequestClient/RequestClient.hpp"
+#include "common/Commands.hpp"
 #include "common/Utils.hpp"
 
-constexpr int RequestClient::TIMEOUT;
-constexpr int RequestClient::TRY_RCV;
+constexpr char RequestClient::IPC[];
+constexpr char RequestClient::UNIX[];
 
 RequestClient::RequestClient() : _sockFd(-1), _state(State::idle) {}
 
@@ -40,12 +41,11 @@ bool RequestClient::connectToSocket() {
     return false;
   }
 
-  if (nn_setsockopt(_sockFd, NN_SOL_SOCKET, NN_SNDTIMEO,
-                    &RequestClient::TIMEOUT,
-                    sizeof(RequestClient::TIMEOUT)) == -1 ||
-      nn_setsockopt(_sockFd, NN_SOL_SOCKET, NN_RCVTIMEO,
-                    &RequestClient::TIMEOUT,
-                    sizeof(RequestClient::TIMEOUT)) == -1) {
+  int linger = TIMEOUT;
+  if (nn_setsockopt(_sockFd, NN_SOL_SOCKET, NN_SNDTIMEO, &linger,
+                    sizeof(linger)) == -1 ||
+      nn_setsockopt(_sockFd, NN_SOL_SOCKET, NN_RCVTIMEO, &linger,
+                    sizeof(linger)) == -1) {
     logError("connectToDaemon - nn_setsockopt() failed", errno);
     return false;
   }
@@ -68,12 +68,12 @@ int RequestClient::socketFileExists() {
   struct stat buffer;
   std::string name;
 
-  if (_sockFile.find("ipc://") == std::string::npos ||
-      _sockFile.find("unix://") == std::string::npos) {
-    size_t pos = _sockFile.find("ipc://") == std::string::npos ? 7 : 6;
+  if (_sockFile.find(IPC) == std::string::npos ||
+      _sockFile.find(UNIX) == std::string::npos) {
+    size_t pos = _sockFile.find(IPC) == std::string::npos ? 7 : 6;
     name = std::string(_sockFile.begin() + pos, _sockFile.end());
 
-    _sockFile = "ipc://" + name;
+    _sockFile = IPC + name;
   } else {
     logError(std::string("connectToDaemon - Unknown protocol for serverurl " +
                          _sockFile));
@@ -98,15 +98,15 @@ void RequestClient::cleanUp() {
 }
 
 bool RequestClient::isConnectionAlive() {
-  if (nn_send(_sockFd, "ping", 4, 0) < 4) {
+  if (nn_send(_sockFd, Commands::PING, 4, 0) < 4) {
     _state = State::idle;
     logError("isConnectionAlive - Connection refused!");
     return false;
   }
-  char buf[1024];
-  bzero(buf, 1024);
 
-  if (!tryRecv(buf, sizeof(buf), "pong")) {
+  std::string answer;
+
+  if (!tryRecv(answer, Commands::PONG)) {
     _state = State::idle;
     logError("isConnectionAlive - Connection refused!");
     return false;
@@ -145,23 +145,27 @@ std::string RequestClient::sendMsg(std::vector<std::string> const &msg,
     return "";
   }
 
-  char buf[1024];
-  bzero(buf, 1024);
+  std::string answer;
 
-  if (!tryRecv(buf, sizeof(buf))) {
+  if (!tryRecv(answer)) {
     cleanUp();
     error = -1;
     return "";
   }
 
-  return std::string(buf);
+  return answer;
 }
 
-bool RequestClient::tryRecv(char *buf, size_t size,
-                            const std::string &expected) {
+bool RequestClient::tryRecv(std::string &answer, const std::string &expected) {
+  void *buffer = nullptr;
+
   for (int i = 0; i < TRY_RCV; ++i) {
-    if (nn_recv(_sockFd, buf, size, 0) > 0) {
-      if (expected.empty() || expected == buf) {
+    if (nn_recv(_sockFd, &buffer, NN_MSG, 0) > 0) {
+      answer = std::string(static_cast<char *>(buffer));
+      nn_freemsg(buffer);
+      buffer = nullptr;
+
+      if (expected.empty() || expected == answer) {
         return true;
       }
     }

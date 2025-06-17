@@ -2,6 +2,9 @@
 #include "common/Commands.hpp"
 #include "common/Utils.hpp"
 
+constexpr char Daemon::IPC[];
+constexpr char Daemon::UNIX[];
+
 Daemon::Daemon(std::string socketPath, Log logInfo) {
   this->socketPath = socketPath;
   this->socketFd = -1;
@@ -56,8 +59,8 @@ void Daemon::setIpc() {
 }
 
 void Daemon::formatSocketFileName() {
-  const std::string ipc("ipc://");
-  const std::string _unix("unix://");
+  const std::string ipc(IPC);
+  const std::string _unix(UNIX);
 
   if (this->socketPath.compare(0, ipc.size(), ipc) == 0) {
     return;
@@ -107,9 +110,7 @@ void Daemon::start() {
   this->startAllPrograms();
   std::cout << "Daemon started." << std::endl;
   int ret = 0;
-  char buf[1024];
-
-  bzero(buf, 1024);
+  void *buffer = nullptr;
 
   while (true) {
     // update program first
@@ -125,11 +126,14 @@ void Daemon::start() {
     }
     if (this->pfd.revents & NN_POLLIN) {
       for (int i = 0; i < TRY_RCV; i++) {
-        if (nn_recv(this->socketFd, buf, sizeof(buf), 0) > 0) {
-          std::string message(buf);
-          this->processMessage(std::string(message));
+        int bytes = nn_recv(this->socketFd, &buffer, NN_MSG, 0);
 
-          bzero(buf, 1024);
+        if (bytes > 0) {
+
+          std::string message(static_cast<char *>(buffer), bytes);
+          nn_freemsg(buffer);
+          buffer = nullptr;
+          this->processMessage(message);
           break;
         }
       }
@@ -140,7 +144,15 @@ void Daemon::start() {
 void Daemon::processMessage(std::string const &message) {
   std::vector<std::string> keys = Utils::split(message, " ");
 
-  if (keys[0].compare(0, keys[0].size(), Commands::PING) == 0) {
+  std::cout << "Key[0] = |" << keys[0] << "|" << std::endl;
+  std::cout << "ping = |" << Commands::PING << "|" << std::endl;
+  std::cout << "wtf = " << keys[0].compare(0, keys[0].size(), Commands::PING)
+            << std::endl;
+  for (size_t i = 0; i < keys[0].size(); ++i) {
+    printf("[%02X] ", static_cast<unsigned char>(keys[0][i]));
+  }
+  printf("\n");
+  if (keys[0] == "ping") {
     std::cout << "Command \"PING\" received: sending PONG" << std::endl;
     std::string snd(Commands::PONG);
     if (nn_send(this->socketFd, snd.c_str(), snd.size(), 0) < 1) {
@@ -157,7 +169,7 @@ void Daemon::processMessage(std::string const &message) {
   } else if (keys[0].compare(0, keys[0].size(), Commands::RELOAD) == 0) {
     std::cout << "Command \"RELOAD\" received" << std::endl;
   } else {
-    std::cout << "Unknown message : " << message << std::endl;
+    std::cout << "Unknown message : |" << message << "|" << std::endl;
   }
 }
 

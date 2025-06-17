@@ -25,9 +25,12 @@ private:
   static constexpr int TIMEOUT = 10; // 10ms timeout
   static constexpr int TRY_RCV = 3;
 
+  static constexpr char IPC[] = "ipc://";
+  static constexpr char UNIX[] = "unix://";
+
   bool isConnectionAlive();
   int socketFileExists();
-  bool tryRecv(char *buf, size_t size, const std::string &expected = "");
+  bool tryRecv(std::string &, const std::string &expected = "");
   void logError(const std::string &msg, const int &error = -1);
   bool connectToSocket();
 };
