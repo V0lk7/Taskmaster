@@ -64,10 +64,14 @@ bool RequestClient::connectToSocket() {
   return true;
 }
 
-int RequestClient::socketFileExists() {
+bool RequestClient::socketFileExists() {
   struct stat buffer;
   std::string name;
 
+  if (_sockFile.empty()) {
+    logError(std::string("connectToDaemon - File Empty!"));
+    return false;
+  }
   if (_sockFile.find(IPC) == std::string::npos ||
       _sockFile.find(UNIX) == std::string::npos) {
     size_t pos = _sockFile.find(IPC) == std::string::npos ? 7 : 6;
@@ -122,11 +126,11 @@ std::string RequestClient::sendMsg(std::vector<std::string> const &msg,
       error = -1;
       return "";
     }
-    if (!isConnectionAlive()) {
-      error = -1;
-      cleanUp();
-      return "";
-    }
+  }
+  if (!isConnectionAlive()) {
+    error = -1;
+    cleanUp();
+    return "";
   }
 
   std::ostringstream oss;

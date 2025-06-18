@@ -168,7 +168,7 @@ void Daemon::processMessage(std::string const message) {
   std::string answer;
 
   if (keys[0] == "ping") {
-    std::cout << "Command \"PING\" received: sending PONG" << std::endl;
+    std::cout << "Command \"PING\" received" << std::endl;
     answer = Commands::PONG;
   } else if (keys[0] == Commands::START) {
     std::cout << "Command \"START\" received" << std::endl;

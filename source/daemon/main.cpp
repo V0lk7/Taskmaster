@@ -5,9 +5,15 @@
 static void signalHandler(int signal);
 static bool setUpSignalHandler();
 
+static bool dropToNobody();
+
 std::atomic<Daemon *> daemonHandler{nullptr};
 
 int main(int argc, char **argv) {
+  if (!dropToNobody()) {
+    std::cerr << "Error: Can\'t drop privileges!" << std::endl;
+    return 1;
+  }
   if (argc < 2) {
     std::cerr << "Usage: " << argv[0] << " <config_file>" << std::endl;
     return 1;
@@ -67,4 +73,17 @@ static void signalHandler(int signal) {
   } else {
     std::cout << "SIGHUP called" << std::endl;
   }
+}
+
+static bool dropToNobody() {
+  if (getuid() == 0) {
+    if (setgid(getgid()) != 0) {
+      return false;
+    }
+    if (setuid(getuid()) != 0) {
+      return false;
+    }
+  }
+
+  return true;
 }
