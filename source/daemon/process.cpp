@@ -4,7 +4,7 @@
 Process::Process(std::string name) : _name(name){
 	this->_state = State::STOPPED;
 	this->_pid = -1;
-	this->_startTime = 0;
+	this->_time = 0;
 }
 
 Process::~Process() {
@@ -26,12 +26,12 @@ int Process::getPid() const {
 	return this->_pid;
 }
 
-void Process::setStartTime() {
-	this->_startTime = std::time(nullptr);
+void Process::setTime() {
+	this->_time = std::time(nullptr);
 }
 
-time_t Process::getStartTime() const {
-	return this->_startTime;
+time_t Process::getTime() const {
+	return this->_time;
 }
 
 std::string Process::getName() const {
@@ -40,7 +40,7 @@ std::string Process::getName() const {
 
 void Process::start(mode_t umask_process, const std::string &workdir, const std::string &stdoutfile, const std::string &stderrfile, const std::map<std::string, std::string> &env, std::string command) {
 	this->setState(State::STARTING);
-	this->setStartTime();
+	this->setTime();
 	int pid = fork();
 	char *completeCommand[4];
 	if (pid == -1) {
@@ -91,6 +91,12 @@ void Process::stop(int stopsignal, int stoptimeout) {
 	}
 	this->_pid = -1; // Reset PID to indicate process is stopped
 	this->setState(State::STOPPED);
+}
+
+bool Process::diffTime(int deltaMax) {
+	time_t currentTime = std::time(nullptr);
+	double delta = std::difftime(currentTime, this->_time);
+	return (delta <= static_cast<double>(deltaMax));
 }
 
 std::string convertStateToString(Process::State state) {

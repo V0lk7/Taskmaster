@@ -29,11 +29,12 @@ class Process {
 		~Process();
 		void setState(State state);
 		void setPid(int pid);
-		void setStartTime();
+		void setTime();
 		State getState() const;
 		int getPid() const;
 		std::string getName() const;
-		time_t getStartTime() const;
+		time_t getTime() const;
+		bool diffTime(int deltaMax);
 
 		void start(mode_t umask_process, const std::string &workdir, const std::string &stdoutfile, const std::string &stderrfile, const std::map<std::string, std::string> &env, std::string command);
 		void stop(int stopsignal, int stoptimeout);
@@ -42,7 +43,7 @@ class Process {
 		std::string _name;
 		State _state;
 		int _pid;
-		time_t _startTime;
+		time_t _time;
 	};
 
 std::string convertStateToString(Process::State state);
