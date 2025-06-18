@@ -15,7 +15,9 @@ RequestClient::~RequestClient() {
 
 void RequestClient::setsockFile(std::string const &src) {
   if (src != _sockFile) {
+    std::cout << "aled 1" << std::endl;
     _sockFile = src;
+    std::cout << "aled 2" << std::endl;
   }
 }
 
@@ -64,10 +66,14 @@ bool RequestClient::connectToSocket() {
   return true;
 }
 
-int RequestClient::socketFileExists() {
+bool RequestClient::socketFileExists() {
   struct stat buffer;
   std::string name;
 
+  if (_sockFile.empty()) {
+    logError(std::string("connectToDaemon - File Empty!"));
+    return false;
+  }
   if (_sockFile.find(IPC) == std::string::npos ||
       _sockFile.find(UNIX) == std::string::npos) {
     size_t pos = _sockFile.find(IPC) == std::string::npos ? 7 : 6;

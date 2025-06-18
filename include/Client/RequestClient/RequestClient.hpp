@@ -28,7 +28,7 @@ private:
   static constexpr char UNIX[] = "unix://";
 
   bool isConnectionAlive();
-  int socketFileExists();
+  bool socketFileExists();
   bool tryRecv(std::string &, const std::string &expected = "");
   void logError(const std::string &msg, const int &error = -1);
   bool connectToSocket();
