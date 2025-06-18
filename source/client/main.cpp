@@ -25,23 +25,14 @@ int main(int ac, char *av[]) {
 }
 
 static bool dropToNobody() {
-  uid_t uid = getuid();
-
-  if (uid == 0) {
-    struct passwd *pw = getpwnam("nobody");
-
-    std::cout << "????" << std::endl;
-
-    if (pw) {
-      uid = pw->pw_uid;
-    } else {
-      uid = 65534;
+  if (getuid() == 0) {
+    if (setgid(getgid()) != 0) {
+      return false;
+    }
+    if (setuid(getuid()) != 0) {
+      return false;
     }
   }
 
-  if (setuid(uid) != 0) {
-    std::cout << "aled" << std::endl;
-    return false;
-  }
   return true;
 }

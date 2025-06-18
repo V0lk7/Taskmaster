@@ -15,9 +15,7 @@ RequestClient::~RequestClient() {
 
 void RequestClient::setsockFile(std::string const &src) {
   if (src != _sockFile) {
-    std::cout << "aled 1" << std::endl;
     _sockFile = src;
-    std::cout << "aled 2" << std::endl;
   }
 }
 
@@ -128,11 +126,11 @@ std::string RequestClient::sendMsg(std::vector<std::string> const &msg,
       error = -1;
       return "";
     }
-    if (!isConnectionAlive()) {
-      error = -1;
-      cleanUp();
-      return "";
-    }
+  }
+  if (!isConnectionAlive()) {
+    error = -1;
+    cleanUp();
+    return "";
   }
 
   std::ostringstream oss;
