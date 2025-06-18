@@ -53,6 +53,8 @@ class Program {
 		void stop(std::string name_process);
 		void printProgram();
 
+		void superviseProcesses();
+
 	private:
 		std::string _name;
 		std::string _command;

@@ -281,6 +281,14 @@ void Program::printProgram() {
 	}
 }
 
+void Program::superviseProcesses() {
+// boucle sur tous les process
+// si le process est STARTING, on attend qu'il soit RUNNING ou FATAL en fonction du deltaMax
+// si le process est RUNNING, on vérifie son état
+// si le process est STOPPED ou EXITED, on le redémarre si nécessaire (en fonction de la politique de redémarrage)
+// si le process est FATAL, on le redémarre immédiatement (si la politique de redémarrage le permet)
+}
+
 int convertStringToStopsignal(const std::string &str) {
 	if (str == "TERM") {
 		return SIGTERM;
@@ -300,3 +308,4 @@ std::string to_octal_string(mode_t mode) {
     oss << std::setfill('0') << std::oct << std::setw(3) << (mode & 0777);
     return oss.str();
 }
+

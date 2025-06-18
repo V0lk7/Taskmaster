@@ -242,3 +242,9 @@ void Daemon::printDaemon() {
 std::vector<Program> Daemon::getPrograms() { return this->programs; }
 
 void Daemon::clean() { stopAllPrograms(); }
+
+void Daemon::supervisePrograms() {
+  for (auto &program : this->programs) {
+	program.supervise();
+  }
+}

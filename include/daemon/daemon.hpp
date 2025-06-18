@@ -41,6 +41,8 @@ public:
   std::string stringStatusAllPrograms();
   std::vector<Program> getPrograms();
 
+  void supervisePrograms();
+
 private:
   std::string socketPath;
   int socketFd;
