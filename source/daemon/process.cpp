@@ -4,6 +4,7 @@
 Process::Process(std::string name) : _name(name){
 	this->_state = State::STOPPED;
 	this->_pid = -1;
+	this->_startTime = 0;
 }
 
 Process::~Process() {
@@ -25,22 +26,31 @@ int Process::getPid() const {
 	return this->_pid;
 }
 
+void Process::setStartTime() {
+	this->_startTime = std::time(nullptr);
+}
+
+time_t Process::getStartTime() const {
+	return this->_startTime;
+}
+
 std::string Process::getName() const {
 	return this->_name;
 }
 
 void Process::start(mode_t umask_process, const std::string &workdir, const std::string &stdoutfile, const std::string &stderrfile, const std::map<std::string, std::string> &env, std::string command) {
 	this->setState(State::STARTING);
+	this->setStartTime();
 	int pid = fork();
 	char *completeCommand[4];
-	completeCommand[0] = const_cast<char*>("/bin/sh");
-	completeCommand[1] = const_cast<char*>("-c");
-	completeCommand[2] = const_cast<char*>(command.c_str());
-	completeCommand[3] = nullptr;
 	if (pid == -1) {
 		throw std::runtime_error("Error forking process: " + std::string(strerror(errno)));
 		return ;
 	} else if (pid == 0) {
+		completeCommand[0] = const_cast<char*>("/bin/sh");
+		completeCommand[1] = const_cast<char*>("-c");
+		completeCommand[2] = const_cast<char*>(command.c_str());
+		completeCommand[3] = nullptr;
 		if (umask_process != (mode_t)-1) {
 			umask(umask_process);
 		}
