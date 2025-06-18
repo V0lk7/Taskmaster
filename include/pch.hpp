@@ -4,11 +4,13 @@
 // C++ Standard Library
 #include <algorithm> // IWYU pragma: keep
 #include <csignal>
-#include <functional>    // IWYU pragma: keep
-#include <iostream>      // IWYU pragma: keep
-#include <map>           // IWYU pragma: keep
-#include <queue>         // IWYU pragma: keep
-#include <sstream>       // IWYU pragma: keep
+#include <functional> // IWYU pragma: keep
+#include <iomanip>    // IWYU pragma: keep
+#include <iostream>   // IWYU pragma: keep
+#include <map>        // IWYU pragma: keep
+#include <queue>      // IWYU pragma: keep
+#include <sstream>    // IWYU pragma: keep
+#include <sstream>
 #include <stdexcept>     // IWYU pragma: keep
 #include <string>        // IWYU pragma: keep
 #include <unordered_set> // IWYU pragma: keep
@@ -21,6 +23,10 @@
 #include <sys/epoll.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+#include <sys/signal.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
 
 #include <cerrno>
 #include <strings.h>

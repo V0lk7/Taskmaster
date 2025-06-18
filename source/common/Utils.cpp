@@ -39,3 +39,18 @@ void Utils::rtrim(std::string &s) {
               .base(),
           s.end());
 }
+
+std::string Utils::concat(std::vector<std::string> &vec,
+                          std::string delimiter) {
+  std::string result;
+  if (vec.empty()) {
+    return result; // Return empty string if vector is empty
+  }
+  for (size_t i = 0; i < vec.size(); ++i) {
+    result += vec[i];
+    if (i < vec.size() - 1) {
+      result += delimiter; // Add delimiter between elements
+    }
+  }
+  return result;
+}

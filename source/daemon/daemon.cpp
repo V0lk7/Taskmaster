@@ -177,8 +177,12 @@ void Daemon::processMessage(std::string const message) {
     std::cout << "Command \"STOP\" received" << std::endl;
     answer = "OK";
   } else if (keys[0] == Commands::STATUS) {
-    std::cout << "Command \"STATUS\" received" << std::endl;
-    answer = "OK";
+    for (auto &program : this->programs) {
+      std::vector<std::string> status = program.getStatusProcesses();
+
+      answer += Utils::concat(status, "\n");
+      answer += "\n";
+    }
   } else if (keys[0] == Commands::RELOAD) {
     std::cout << "Command \"RELOAD\" received" << std::endl;
     answer = "OK";

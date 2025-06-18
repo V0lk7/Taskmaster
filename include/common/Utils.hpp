@@ -1,7 +1,7 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
-#include "pch.hpp"
+#include "pch.hpp" // IWYU pragma: keep
 
 extern char **environ;
 
@@ -13,6 +13,9 @@ public:
   static void trim(std::string &s);
   static void rtrim(std::string &s);
   static void ltrim(std::string &s);
+
+  static std::string concat(std::vector<std::string> &vec,
+                            std::string delimiter = "");
 
 private:
   Utils() = delete;
