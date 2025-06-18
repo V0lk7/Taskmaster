@@ -14,8 +14,19 @@ Console::Console() {}
 
 Console::~Console() {}
 
-void Console::setProcessList(std::string const &args) {
-  Console::_processList = Utils::split(args, " ");
+void Console::setProcessList(
+    std::map<std::string, std::vector<std::string>> const &newProcessList) {
+  _processList.clear();
+  for (const auto &pair : newProcessList) {
+    if (pair.second.size() == 1) {
+      Console::_processList.push_back(pair.first);
+    } else {
+      _processList.push_back(pair.first + ":*");
+      for (const auto &process : pair.second) {
+        Console::_processList.push_back(pair.first + ":" + process);
+      }
+    }
+  }
 }
 
 void Console::setReadline() {

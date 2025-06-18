@@ -24,7 +24,7 @@ public:
   CommandMap const &getCommands() const;
   void setQuestionState(std::string const &, answerFunction);
   State const &getState() const;
-  void setProcessList(std::string const &);
+  void setProcessList(std::map<std::string, std::vector<std::string>> const &);
 
 private:
   std::string _prompt = "";

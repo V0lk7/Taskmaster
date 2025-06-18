@@ -1,6 +1,7 @@
 #include "Client/Client.hpp"
 
 #include "common/Commands.hpp"
+#include "common/Utils.hpp"
 #include "pch.hpp" // IWYU pragma: keep
 
 Client &Client::Instance() {
@@ -106,7 +107,21 @@ void Client::cmdStatus(std::vector<std::string> &args) {
   std::string response = _request.sendMsg(args, error);
 
   if (error == 0) {
-    _console.setProcessList(response);
+    // response format is programName:processName:status:pid:uptime\n...
+    std::vector<std::string> processList = Utils::split(response, "\n");
+    std::map<std::string, std::vector<std::string>> processMap;
+
+    for (std::string &process : processList) {
+      std::vector<std::string> processInfo = Utils::split(process, ":");
+      auto it = processMap.find(processInfo[0]);
+
+      if (it != processMap.end()) {
+        it->second.push_back(processInfo[1]);
+      } else {
+        processMap[processInfo[0]] = std::vector<std::string>({processInfo[1]});
+      }
+    }
+    _console.setProcessList(processMap);
     std::cout << response << std::endl;
   }
 }
