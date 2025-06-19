@@ -191,6 +191,66 @@ void Program::start(std::string name_process) {
   }
 }
 
+bool Program::start(std::string name_process, std::string &error_msg) {
+  try {
+    Process *processToStart = nullptr;
+    try {
+      processToStart = &this->getProcess(name_process);
+      if (processToStart->getState() == Process::State::STARTING ||
+          processToStart->getState() == Process::State::RUNNING ||
+          processToStart->getState() == Process::State::BACKOFF) {
+        throw 1; // Custom exception for already started
+      }
+      this->doLog("Starting process", Log::LogLevel::INFO,
+                  processToStart->getName());
+      processToStart->start(this->_umask, this->_workdir, this->_stdoutfile,
+                            this->_stderrfile, this->_env, this->_command);
+
+      int pid = processToStart->getPid();
+
+      sleep(this->_startdelay);
+
+      int ret = waitpid(pid, nullptr, WNOHANG);
+
+      switch (ret) {
+      case -1:
+        throw std::runtime_error("Error waiting for process: " +
+                                 std::string(strerror(errno)));
+      case 0:
+        // Process is still running, we can consider it started
+        processToStart->setState(Process::State::RUNNING);
+        this->doLog("Process started successfully", Log::LogLevel::INFO,
+                    processToStart->getName());
+        break;
+      default:
+        // Process exited immediately after start
+        processToStart->setState(Process::State::EXITED);
+        this->doLog("Process exited immediately after start",
+                    Log::LogLevel::ERR, processToStart->getName());
+        throw 2; // Custom exception for immediate exit
+      }
+    } catch (int i) {
+      switch (i) {
+      case 1:
+        throw std::runtime_error("(already started)");
+        break;
+      case 2:
+        throw std::runtime_error("(spawn error)");
+        break;
+      }
+    } catch (const std::runtime_error &e) {
+      this->doLog(std::string("Error starting process: ") + e.what(),
+                  Log::LogLevel::ERR, processToStart->getName());
+
+      throw std::runtime_error("(unexpected error)");
+    }
+    return true;
+  } catch (const std::runtime_error &e) {
+    error_msg = name_process + ": " + "ERROR " + e.what();
+    return false;
+  }
+}
+
 void Program::stop(std::string name_process) {
   std::vector<Process> processes_to_stop;
   if (!name_process.empty()) {

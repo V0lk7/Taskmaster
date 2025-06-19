@@ -172,7 +172,20 @@ void Daemon::processMessage(std::string const message) {
     answer = Commands::PONG;
   } else if (keys[0] == Commands::START) {
     std::cout << "Command \"START\" received" << std::endl;
-    answer = "OK";
+    Program *program = nullptr;
+
+    for (auto &item : this->programs) {
+      if (item.getName() == keys[1]) {
+        program = &item;
+        break;
+      }
+    }
+    keys.erase(keys.begin());
+    std::string processName = keys[0];
+    if (keys.size() > 1) {
+      processName = keys[1];
+    }
+    program->start(processName, answer);
   } else if (keys[0] == Commands::STOP) {
     std::cout << "Command \"STOP\" received" << std::endl;
     answer = "OK";

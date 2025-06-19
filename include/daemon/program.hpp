@@ -47,6 +47,7 @@ public:
   std::string convertRestartToString(Restart restart);
   std::string convertStopsignalToString(int signal);
   void start(std::string name_process);
+  bool start(std::string name_process, std::string &error_msg);
   void stop(std::string name_process);
   void printProgram();
 
