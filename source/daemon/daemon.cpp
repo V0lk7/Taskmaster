@@ -132,6 +132,7 @@ void Daemon::start() {
   while (true) {
     // update program first
     // check message received from socket
+	this->supervisePrograms();
     if (!this->listenClients()) {
       clean();
       return;
@@ -244,7 +245,11 @@ std::vector<Program> Daemon::getPrograms() { return this->programs; }
 void Daemon::clean() { stopAllPrograms(); }
 
 void Daemon::supervisePrograms() {
+  if (this->programs.empty()) {
+	this->sendLogs("No programs to supervise.", "WARNING");
+	return;
+  }
   for (auto &program : this->programs) {
-	program.supervise();
+	program.superviseProcesses();
   }
 }

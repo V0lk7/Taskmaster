@@ -3,6 +3,7 @@
 
 #include "log.hpp"
 #include "process.hpp"
+#include <algorithm>
 
 class Program {
 	public:
@@ -54,11 +55,11 @@ class Program {
 		void printProgram();
 
 		void superviseProcesses();
+		Process &getProcess(std::string name);
 
 	private:
 		std::string _name;
 		std::string _command;
-		// std::vector<char*> _args;
 		std::string _workdir;
 		int _nbprocess; //How many processes to start
 		bool _autostart; //Whether to start this program at launch or not
@@ -74,10 +75,7 @@ class Program {
 		std::map<std::string, std::string> _env; //Environment variables to set for the process
 		std::vector<Log> _logs; //Logs for the process
 		std::vector<Process> _processes; //Vector of processes
-		// std::vector<char*> setArgs(std::string rawCommand);
-		// std::string setCommand(std::string rawCommand);
 		void addProcess();
-		Process &getProcess(std::string name);
 	};
 
 	int convertStringToStopsignal(const std::string &str);
