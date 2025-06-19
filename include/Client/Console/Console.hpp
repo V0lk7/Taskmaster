@@ -1,6 +1,8 @@
 #ifndef CONSOLE_HPP
 #define CONSOLE_HPP
 
+#include "Client/ProcessInfo.hpp"
+
 #include "pch.hpp" // IWYU pragma: keep
 
 class Console {
@@ -24,7 +26,7 @@ public:
   CommandMap const &getCommands() const;
   void setQuestionState(std::string const &, answerFunction);
   State const &getState() const;
-  void setProcessList(std::map<std::string, std::vector<std::string>> const &);
+  void setProcessList(std::map<std::string, std::vector<ProcessInfo>> const &);
 
 private:
   std::string _prompt = "";

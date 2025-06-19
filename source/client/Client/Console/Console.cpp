@@ -15,7 +15,7 @@ Console::Console() {}
 Console::~Console() {}
 
 void Console::setProcessList(
-    std::map<std::string, std::vector<std::string>> const &newProcessList) {
+    std::map<std::string, std::vector<ProcessInfo>> const &newProcessList) {
   _processList.clear();
   for (const auto &pair : newProcessList) {
     if (pair.second.size() == 1) {
@@ -23,7 +23,7 @@ void Console::setProcessList(
     } else {
       _processList.push_back(pair.first + ":*");
       for (const auto &process : pair.second) {
-        Console::_processList.push_back(pair.first + ":" + process);
+        Console::_processList.push_back(pair.first + ":" + process.name);
       }
     }
   }

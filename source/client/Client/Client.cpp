@@ -1,4 +1,5 @@
 #include "Client/Client.hpp"
+#include "Client/ProcessInfo.hpp"
 
 #include "common/Commands.hpp"
 #include "common/Utils.hpp"
@@ -109,20 +110,43 @@ void Client::cmdStatus(std::vector<std::string> &args) {
   if (error == 0) {
     // response format is programName:processName:status:pid:uptime\n...
     std::vector<std::string> processList = Utils::split(response, "\n");
-    std::map<std::string, std::vector<std::string>> processMap;
+    std::map<std::string, std::vector<ProcessInfo>> processMap;
 
     for (std::string &process : processList) {
-      std::vector<std::string> processInfo = Utils::split(process, ":");
+      std::vector<std::string> processInfo = Utils::split(process, ";");
       auto it = processMap.find(processInfo[0]);
 
       if (it != processMap.end()) {
-        it->second.push_back(processInfo[1]);
+        it->second.push_back({processInfo[1], processInfo[2], processInfo[3]});
       } else {
-        processMap[processInfo[0]] = std::vector<std::string>({processInfo[1]});
+        processMap[processInfo[0]] = std::vector<ProcessInfo>(
+            {ProcessInfo(processInfo[1], processInfo[2], processInfo[3])});
       }
     }
+    displayProcessList(processMap);
     _console.setProcessList(processMap);
-    std::cout << response << std::endl;
+  }
+}
+
+void Client::displayProcessList(
+    const std::map<std::string, std::vector<ProcessInfo>> &processMap) {
+
+  for (const auto &pair : processMap) {
+    const std::string &programName = pair.first;
+    const std::vector<ProcessInfo> &processes = pair.second;
+
+    if (pair.second.size() == 1) {
+      std::cout << std::left << std::setw(33) << programName << std::left
+                << std::setw(10) << pair.second[0].status << std::left
+                << std::left << pair.second[0].message << std::endl;
+    } else {
+      for (const ProcessInfo &process : processes) {
+        const std::string name = programName + ":" + pair.second[0].name;
+        std::cout << std::left << std::setw(33) << name << std::left
+                  << std::setw(10) << process.status << std::left
+                  << process.message << std::endl;
+      }
+    }
   }
 }
 

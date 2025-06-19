@@ -45,6 +45,9 @@ private:
 
   bool askUserConfirmation(std::string const &);
 
+  void
+  displayProcessList(const std::map<std::string, std::vector<ProcessInfo>> &);
+
   void cmdErrorMsg(Commands::CMD const &) const;
   void logError(const std::string &msg, const int &error = -1);
 

@@ -268,10 +268,9 @@ std::vector<std::string> Program::getStatusProcesses() const {
     std::string programName = _name;
     std::string processName = process.getName();
     std::string status = Process::convertStateToString(process.getState());
-    std::string pid = std::to_string(process.getPid());
 
-    programStatus.push_back(programName + ":" + processName + ":" + status +
-                            ":" + pid + ":" + "00:00:00:00:00");
+    programStatus.push_back(programName + ";" + processName + ";" + status +
+                            ";en attente");
   }
   return programStatus;
 }
