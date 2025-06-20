@@ -138,14 +138,8 @@ void Console::setQuestionState(std::string const &newPrompt,
   rl_replace_line("", 0);
 }
 
-bool Console::registerCmd(const std::string &name, CommandHandler handler) {
-  if (_commands.find(name) != _commands.end()) {
-    std::cerr << "[Debug] - Console::registerCmd  - Command already exist!"
-              << std::endl;
-    return false;
-  }
-  _commands[name] = handler;
-  return true;
+void Console::setCommandHandler(CommandHandler &handler) {
+  _cmdHandler = handler;
 }
 
 void Console::readCharRead() { rl_callback_read_char(); }
@@ -235,10 +229,6 @@ char *Console::commandGenerator(const char *text, int state) {
   }
 
   return nullptr;
-}
-
-Console::CommandMap const &Console::getCommands() const {
-  return Console::Instance()._commands;
 }
 
 Console::State const &Console::getState() const {

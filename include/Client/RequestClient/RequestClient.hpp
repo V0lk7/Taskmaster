@@ -9,7 +9,8 @@ public:
   ~RequestClient();
 
   int getrcvFd() const;
-  std::string sendMsg(std::vector<std::string> const &, int &);
+  bool sendMsg(std::vector<std::string> const &);
+  bool receiveMsg(std::string &);
 
   void setsockFile(std::string const &);
   void cleanUp();
@@ -27,9 +28,8 @@ private:
   static constexpr char IPC[] = "ipc://";
   static constexpr char UNIX[] = "unix://";
 
-  bool isConnectionAlive();
   bool socketFileExists();
-  bool tryRecv(std::string &, const std::string &expected = "");
+  // bool tryRecv(std::string &, const std::string &expected = "");
   void logError(const std::string &msg, const int &error = -1);
   bool connectToSocket();
 };

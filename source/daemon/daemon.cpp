@@ -167,11 +167,7 @@ void Daemon::processMessage(std::string const message) {
   std::vector<std::string> keys = Utils::split(message, " ");
   std::string answer;
 
-  if (keys[0] == "ping") {
-    std::cout << "Command \"PING\" received" << std::endl;
-    answer = Commands::PONG;
-  } else if (keys[0] == Commands::START) {
-    std::cout << "Command \"START\" received" << std::endl;
+  if (keys[0] == Commands::START) {
     Program *program = nullptr;
 
     for (auto &item : this->programs) {
@@ -186,6 +182,7 @@ void Daemon::processMessage(std::string const message) {
       processName = keys[1];
     }
     program->start(processName, answer);
+    std::cout << "aled = " << answer << std::endl;
   } else if (keys[0] == Commands::STOP) {
     std::cout << "Command \"STOP\" received" << std::endl;
     answer = "OK";

@@ -61,6 +61,7 @@ bool RequestClient::connectToSocket() {
     }
     return false;
   }
+  _state = State::connected;
   return true;
 }
 
@@ -101,36 +102,11 @@ void RequestClient::cleanUp() {
   }
 }
 
-bool RequestClient::isConnectionAlive() {
-  if (nn_send(_sockFd, Commands::PING, 4, 0) < 4) {
-    _state = State::idle;
-    logError("isConnectionAlive - Connection refused!");
-    return false;
-  }
-
-  std::string answer;
-
-  if (!tryRecv(answer, Commands::PONG)) {
-    _state = State::idle;
-    logError("isConnectionAlive - Connection refused!");
-    return false;
-  }
-  _state = State::connected;
-  return true;
-}
-
-std::string RequestClient::sendMsg(std::vector<std::string> const &msg,
-                                   int &error) {
+bool RequestClient::sendMsg(std::vector<std::string> const &msg) {
   if (_state == State::idle) {
     if (!connectToSocket()) {
-      error = -1;
-      return "";
+      return false;
     }
-  }
-  if (!isConnectionAlive()) {
-    error = -1;
-    cleanUp();
-    return "";
   }
 
   std::ostringstream oss;
@@ -145,36 +121,44 @@ std::string RequestClient::sendMsg(std::vector<std::string> const &msg,
 
   if (s == -1 || s < static_cast<ssize_t>(msgContent.size())) {
     _state = State::idle;
-    error = -1;
-    return "";
+    logError("Connection refused ! - ", errno);
+    return false;
   }
 
-  std::string answer;
+  // std::string answer;
 
-  if (!tryRecv(answer)) {
-    cleanUp();
-    error = -1;
-    return "";
-  }
+  // if (!tryRecv(answer)) {
+  //   _state = State::idle;
+  //   logError("Connection refused ! - ", errno);
+  //   cleanUp();
+  //   error = -1;
+  // }
 
-  return answer;
+  _state = State::waitingResponse;
+  return true;
 }
 
-bool RequestClient::tryRecv(std::string &answer, const std::string &expected) {
+bool RequestClient::receiveMsg(std::string &answer) {
+  if (_state == State::idle || _state != State::waitingResponse) {
+    logError(
+        "receiveMsg - Client not connected or not waiting for a response.");
+    return false;
+  }
 
   void *buffer = nullptr;
-  int bytes = nn_recv(_sockFd, &buffer, NN_MSG, 0);
+  int bytes = 0;
 
-  if (bytes >= 0 && buffer != nullptr) {
+  bytes = nn_recv(_sockFd, &buffer, NN_MSG, 0);
+
+  switch (bytes) {
+  case -1:
+    return false;
+  default:
     answer = std::string(static_cast<char *>(buffer), bytes);
     nn_freemsg(buffer);
     buffer = nullptr;
-
-    if (expected.empty() || expected == answer) {
-      return true;
-    }
+    return true;
   }
-  return false;
 }
 
 void RequestClient::logError(const std::string &msg, const int &error) {

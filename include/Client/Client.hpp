@@ -26,6 +26,8 @@ private:
   RequestClient _request;
   std::string _userAnswer;
 
+  Commands::CMD _currentCmd = Commands::CMD::none;
+
   static constexpr int TIMEOUT = 100;
   static constexpr int MAX_EVENTS = 2;
 
@@ -34,14 +36,14 @@ private:
   bool setUpSigaction();
   static void signalHandler(int);
 
-  bool registerCommands();
+  // bool registerCommands();
 
-  void cmdStatus(std::vector<std::string> &args);
-  bool cmdStart(std::vector<std::string> &args);
-  bool cmdStop(std::vector<std::string> &args);
-  void cmdRestart(std::vector<std::string> &args);
-  void cmdReload(std::vector<std::string> &args);
-  void cmdQuit(std::vector<std::string> &args);
+  // void cmdStatus(std::vector<std::string> &args);
+  // bool cmdStart(std::vector<std::string> &args);
+  // bool cmdStop(std::vector<std::string> &args);
+  // void cmdRestart(std::vector<std::string> &args);
+  // void cmdReload(std::vector<std::string> &args);
+  // void cmdQuit(std::vector<std::string> &args);
 
   bool askUserConfirmation(std::string const &);
 

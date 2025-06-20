@@ -11,7 +11,6 @@ public:
 
   using CommandHandler = std::function<void(std::vector<std::string> &args)>;
   using answerFunction = std::function<void(std::string answer)>;
-  using CommandMap = std::map<std::string, CommandHandler>;
 
   static Console &Instance();
   ~Console();
@@ -23,16 +22,17 @@ public:
   void readCharRead(void);
   void cleanUp();
 
-  CommandMap const &getCommands() const;
   void setQuestionState(std::string const &, answerFunction);
   State const &getState() const;
   void setProcessList(std::map<std::string, std::vector<ProcessInfo>> const &);
 
+  void setCommandHandler(CommandHandler &handler);
+
 private:
   std::string _prompt = "";
-  CommandMap _commands = {};
   State _state = State::normal;
   answerFunction _ansFuction;
+  CommandHandler _cmdHandler;
 
   static std::vector<std::string> _processList;
 
