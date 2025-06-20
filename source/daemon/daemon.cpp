@@ -107,7 +107,7 @@ void Daemon::sendLogs(const std::string &message, std::string log_levelmsg) {
   std::strftime(time_buf, sizeof(time_buf), "%d:%m:%Y %H:%M:%S", ltm);
   std::string time_str(time_buf);
 
-  std::string new_message = time_str + " - [taskmasterd] " + message;
+  std::string new_message = time_str + " - " + log_levelmsg + " - [taskmasterd] " + message;
   Log::LogLevel logLevel = convertStringToLogLevel(log_levelmsg);
 
   for (auto &logger : this->loggers) {
@@ -134,7 +134,6 @@ void Daemon::start() {
     // check message received from socket
 	this->supervisePrograms();
     if (!this->listenClients()) {
-      clean();
       return;
     }
   }
@@ -241,8 +240,6 @@ void Daemon::printDaemon() {
 }
 
 std::vector<Program> Daemon::getPrograms() { return this->programs; }
-
-void Daemon::clean() { stopAllPrograms(); }
 
 void Daemon::supervisePrograms() {
   if (this->programs.empty()) {

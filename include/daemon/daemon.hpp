@@ -13,7 +13,6 @@ public:
 
   void start();
   void stop();
-  void clean();
 
   void startAllPrograms(); // initial start
   // void startProgram(std::string const &);

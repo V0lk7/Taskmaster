@@ -67,7 +67,6 @@ static void signalHandler(int signal) {
 
   if (signal == SIGINT || signal == SIGQUIT) {
     daemon->sendLogs("Daemon shutting down.", "INFO");
-    daemon->clean();
     delete daemon;
     exit(0);
   } else {

@@ -147,7 +147,7 @@ void Program::doLog(const std::string &message, Log::LogLevel level, std::string
 	if (name_process.empty()) {
 		name_process = "main";
 	}
-	std::string full_message = time_str + " - [" + this->_name + ":" + name_process + "] " + message;
+	std::string full_message = time_str + " - " + convertLogLeveltoString(level) + " - [" + this->_name + ":" + name_process + "] " + message;
 	for (auto &log : this->_logs) {
 		if (convertLogLevelToSyslog(log.getLogLevel()) >= convertLogLevelToSyslog(level)) {
 			log.doLog(full_message);
@@ -218,25 +218,32 @@ void Program::start(std::string name_process) {
 }
 
 void Program::stop(std::string name_process) {
-	std::vector<Process> processes_to_stop;
 	if (!name_process.empty()) {
 		try {
-			processes_to_stop.push_back(this->getProcess(name_process));
+			Process &process = this->getProcess(name_process);
+			if (process.getPid() == -1) {
+				this->doLog("Process is not running", Log::LogLevel::WARNING, name_process);
+				return;
+			}
+			this->doLog("Stopping process", Log::LogLevel::INFO, process.getName());
+			process.stop(this->_stopsignal);
 		} catch (const std::runtime_error &e) {
 			this->doLog(e.what(), Log::LogLevel::ERR, name_process);
 			return;
 		}
 	} else {
 		this->doLog("Stopping all processes", Log::LogLevel::INFO, "");
-		processes_to_stop = this->_processes;
-	}
-	for (auto &process : processes_to_stop) {
-		try {
-			this->doLog("Stopping process", Log::LogLevel::INFO, process.getName());
-			process.stop(this->_stopsignal);
-		} catch (const std::exception &e) {
-			this->doLog(std::string("Error stopping process: ") + e.what(), Log::LogLevel::ERR, process.getName());
-			continue;
+		for (auto &process : this->_processes) {
+			try {
+				if (process.getPid() == -1) {
+					continue;
+				}
+				this->doLog("Stopping process", Log::LogLevel::INFO, process.getName());
+				process.stop(this->_stopsignal);
+			} catch (const std::exception &e) {
+				this->doLog(std::string("Error stopping process: ") + e.what(), Log::LogLevel::ERR, process.getName());
+				continue;
+			}
 		}
 	}
 }
