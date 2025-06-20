@@ -205,7 +205,6 @@ void Program::start(std::string name_process) {
                 try {
                     this->doLog("Starting process", Log::LogLevel::INFO, process.getName());
                     process.start(this->_umask, this->_workdir, this->_stdoutfile, this->_stderrfile, this->_env, this->_command);
-                    std::cout << "Process " << process.getName() << " started with PID " << process.getPid() << std::endl;
                 } catch (const std::exception &e) {
                     this->doLog(std::string("Error starting process: ") + e.what(), Log::LogLevel::ERR, process.getName());
                     process.setState(Process::State::FATAL);
@@ -290,14 +289,13 @@ void Program::superviseProcesses() {
 	}
 	bool unexpected_exit;
 	pid_t pid;
+	int status;
 	for (auto &process : this->_processes) {
 		unexpected_exit = false;
-		this->doLog("Supervising process " + process.getName() + " with PID " + std::to_string(process.getPid()), Log::LogLevel::INFO, process.getName());
 		if (process.getPid() == -1) {
 			continue;
 		}
-		pid = waitpid(process.getPid(), nullptr, WNOHANG);
-		this->doLog("waitpid returned: " + std::to_string(pid), Log::LogLevel::INFO, process.getName());
+		pid = waitpid(process.getPid(), &status, WNOHANG);
 		if (pid == -1) {
 			// Error occurred while waiting for the process
 			this->doLog("Error waiting for process " + process.getName() + ": " + std::strerror(errno), Log::LogLevel::ERR, process.getName());
@@ -305,7 +303,7 @@ void Program::superviseProcesses() {
 		} else if (pid == 0) {
 			// Process is still running
 			if (process.getState() == Process::State::STARTING) {
-				if (process.diffTime(this->_startdelay)) {
+				if (!process.diffTime(this->_startdelay)) {
 					process.setState(Process::State::RUNNING);
 					process.setTime();
 					this->doLog("Process " + process.getName() + " is now RUNNING", Log::LogLevel::INFO, process.getName());
@@ -319,7 +317,7 @@ void Program::superviseProcesses() {
 			}
 		} else {
 			// Process has exited
-			int exit_status = WEXITSTATUS(pid);
+			int exit_status = WEXITSTATUS(status);
 			if (process.getState() == Process::State::STARTING) {
 				process.setInfoMsg("Exited too quickly (process log may have details)");
 			}
@@ -329,13 +327,14 @@ void Program::superviseProcesses() {
 				this->doLog("Process " + process.getName() + " exited with unexpected code: " + std::to_string(exit_status), Log::LogLevel::ERR, process.getName());
 				unexpected_exit = true;
 			}
-			if (this->_restart == Restart::TRUE || (this->_restart == Restart::UNEXPECTED && !unexpected_exit)) {
+			if (this->_restart == Restart::TRUE || (this->_restart == Restart::UNEXPECTED && unexpected_exit)) {
 				if (process.getNbRestart() < this->_restartretry) {
 					process.incrementNbRestart();
-					this->doLog("Restarting process " + process.getName(), Log::LogLevel::INFO, process.getName());
+					this->doLog("Restarting process " + process.getName() + ", attempt: " + std::to_string(process.getNbRestart()) + " of " + std::to_string(this->_restartretry), Log::LogLevel::INFO, process.getName());
 					process.start(this->_umask, this->_workdir, this->_stdoutfile, this->_stderrfile, this->_env, this->_command);
 				} else {
 					this->doLog("Process " + process.getName() + " exceeded restart retry limit", Log::LogLevel::ERR, process.getName());
+					process.setPid(-1);
 					process.setState(Process::State::FATAL);
 				}
 			} else {
