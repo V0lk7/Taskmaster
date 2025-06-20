@@ -16,6 +16,8 @@ class Program {
 		Program(const std::string &name, const std::string &command);
 		~Program();
 
+		bool operator==(const Program& other) const;
+
 		void setName(const std::string &name);
 		std::string getName() const;
 		std::string getCommand() const;

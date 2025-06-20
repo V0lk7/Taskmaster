@@ -24,6 +24,17 @@ Program::Program(const std::string &name, const std::string &command) {
 Program::~Program() {
 }
 
+bool Program::operator==(const Program &other) const {
+	return this->_name == other._name && this->_command == other._command &&
+	       this->_workdir == other._workdir && this->_nbprocess == other._nbprocess &&
+	       this->_autostart == other._autostart && this->_restart == other._restart &&
+	       this->_exitcodes == other._exitcodes && this->_startdelay == other._startdelay &&
+	       this->_restartretry == other._restartretry && this->_stopsignal == other._stopsignal &&
+	       this->_stoptimeout == other._stoptimeout && this->_stdoutfile == other._stdoutfile &&
+	       this->_stderrfile == other._stderrfile && this->_umask == other._umask &&
+	       this->_env == other._env;
+}
+
 void Program::setName(const std::string &name) {
 	this->_name = name;
 }
