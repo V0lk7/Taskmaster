@@ -41,5 +41,6 @@ public:
 
 int convertLogLevelToSyslog(Log::LogLevel level);
 Log::LogLevel convertStringToLogLevel(const std::string &str);
+std::string convertLogLeveltoString(const Log::LogLevel &level);
 
 #endif

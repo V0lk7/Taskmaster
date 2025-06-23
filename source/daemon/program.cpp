@@ -116,8 +116,9 @@ void Program::doLog(const std::string &message, Log::LogLevel level,
   if (name_process.empty()) {
     name_process = "main";
   }
-  std::string full_message =
-      time_str + " - [" + this->_name + ":" + name_process + "] " + message;
+  std::string full_message = time_str + " - " + convertLogLeveltoString(level) +
+                             " - [" + this->_name + ":" + name_process + "] " +
+                             message;
   for (auto &log : this->_logs) {
     if (convertLogLevelToSyslog(log.getLogLevel()) >=
         convertLogLevelToSyslog(level)) {
@@ -155,125 +156,77 @@ std::string Program::convertStopsignalToString(int signal) {
 }
 
 void Program::start(std::string name_process) {
-  std::vector<Process> processes_to_start;
   if (!name_process.empty()) {
     try {
-      processes_to_start.push_back(this->getProcess(name_process));
+      Process &process = this->getProcess(name_process);
+      if (process.getState() == Process::State::STOPPED ||
+          process.getState() == Process::State::EXITED) {
+        this->doLog("Starting process", Log::LogLevel::INFO, process.getName());
+        process.start(this->_umask, this->_workdir, this->_stdoutfile,
+                      this->_stderrfile, this->_env, this->_command);
+        std::cout << "Process " << process.getName() << " started with PID "
+                  << process.getPid() << std::endl;
+      } else {
+        this->doLog("Process is already running or starting",
+                    Log::LogLevel::WARNING, process.getName());
+      }
     } catch (const std::runtime_error &e) {
       this->doLog(e.what(), Log::LogLevel::ERR, name_process);
       return;
     }
-    this->doLog("Starting process", Log::LogLevel::INFO, name_process);
   } else {
     this->doLog("Starting all processes", Log::LogLevel::INFO, "");
-    processes_to_start = this->_processes;
-  }
-  for (auto &process : processes_to_start) {
-    if (process.getState() == Process::State::STOPPED ||
-        process.getState() == Process::State::EXITED) {
-      try {
-        this->doLog("Starting process", Log::LogLevel::INFO, process.getName());
-        process.start(this->_umask, this->_workdir, this->_stdoutfile,
-                      this->_stderrfile, this->_env, this->_command);
-        process.setState(Process::State::RUNNING);
-        this->doLog("Process started successfully", Log::LogLevel::INFO,
-                    process.getName());
-      } catch (const std::exception &e) {
-        this->doLog(std::string("Error starting process: ") + e.what(),
-                    Log::LogLevel::ERR, process.getName());
-        process.setState(Process::State::FATAL);
-        continue;
+    for (Process &process : this->_processes) {
+      if (process.getState() == Process::State::STOPPED ||
+          process.getState() == Process::State::EXITED) {
+        try {
+          this->doLog("Starting process", Log::LogLevel::INFO,
+                      process.getName());
+          process.start(this->_umask, this->_workdir, this->_stdoutfile,
+                        this->_stderrfile, this->_env, this->_command);
+        } catch (const std::exception &e) {
+          this->doLog(std::string("Error starting process: ") + e.what(),
+                      Log::LogLevel::ERR, process.getName());
+          process.setState(Process::State::FATAL);
+          continue;
+        }
+      } else {
+        this->doLog("Process is already running or starting",
+                    Log::LogLevel::WARNING, process.getName());
       }
-    } else {
-      this->doLog("Process is already running or starting",
-                  Log::LogLevel::WARNING, process.getName());
     }
-  }
-}
-
-bool Program::start(std::string name_process, std::string &error_msg) {
-  try {
-    Process *processToStart = nullptr;
-    try {
-      processToStart = &this->getProcess(name_process);
-      if (processToStart->getState() == Process::State::STARTING ||
-          processToStart->getState() == Process::State::RUNNING ||
-          processToStart->getState() == Process::State::BACKOFF) {
-        throw 1; // Custom exception for already started
-      }
-      this->doLog("Starting process", Log::LogLevel::INFO,
-                  processToStart->getName());
-      processToStart->start(this->_umask, this->_workdir, this->_stdoutfile,
-                            this->_stderrfile, this->_env, this->_command);
-
-      int pid = processToStart->getPid();
-
-      sleep(this->_startdelay);
-
-      int ret = waitpid(pid, nullptr, WNOHANG);
-
-      switch (ret) {
-      case -1:
-        throw std::runtime_error("Error waiting for process: " +
-                                 std::string(strerror(errno)));
-      case 0:
-        // Process is still running, we can consider it started
-        processToStart->setState(Process::State::RUNNING);
-        this->doLog("Process started successfully", Log::LogLevel::INFO,
-                    processToStart->getName());
-        break;
-      default:
-        // Process exited immediately after start
-        processToStart->setState(Process::State::EXITED);
-        this->doLog("Process exited immediately after start",
-                    Log::LogLevel::ERR, processToStart->getName());
-        throw 2; // Custom exception for immediate exit
-      }
-    } catch (int i) {
-      switch (i) {
-      case 1:
-        throw std::runtime_error("(already started)");
-        break;
-      case 2:
-        throw std::runtime_error("(spawn error)");
-        break;
-      }
-    } catch (const std::runtime_error &e) {
-      this->doLog(std::string("Error starting process: ") + e.what(),
-                  Log::LogLevel::ERR, processToStart->getName());
-
-      throw std::runtime_error("(unexpected error)");
-    }
-    return true;
-  } catch (const std::runtime_error &e) {
-    error_msg = name_process + ": " + "ERROR " + e.what();
-    return false;
   }
 }
 
 void Program::stop(std::string name_process) {
-  std::vector<Process> processes_to_stop;
   if (!name_process.empty()) {
     try {
-      processes_to_stop.push_back(this->getProcess(name_process));
+      Process &process = this->getProcess(name_process);
+      if (process.getPid() == -1) {
+        this->doLog("Process is not running", Log::LogLevel::WARNING,
+                    name_process);
+        return;
+      }
+      this->doLog("Stopping process", Log::LogLevel::INFO, process.getName());
+      process.stop(this->_stopsignal);
     } catch (const std::runtime_error &e) {
       this->doLog(e.what(), Log::LogLevel::ERR, name_process);
       return;
     }
   } else {
     this->doLog("Stopping all processes", Log::LogLevel::INFO, "");
-    processes_to_stop = this->_processes;
-  }
-  for (auto &process : processes_to_stop) {
-    try {
-      this->doLog("Stopping process", Log::LogLevel::INFO, process.getName());
-      process.stop(this->_stopsignal, this->_stoptimeout);
-      this->doLog("Process stopped successfully", Log::LogLevel::INFO,
-                  process.getName());
-    } catch (const std::exception &e) {
-      this->doLog(std::string("Error stopping process: ") + e.what(),
-                  Log::LogLevel::ERR, process.getName());
-      continue;
+    for (auto &process : this->_processes) {
+      try {
+        if (process.getPid() == -1) {
+          continue;
+        }
+        this->doLog("Stopping process", Log::LogLevel::INFO, process.getName());
+        process.stop(this->_stopsignal);
+      } catch (const std::exception &e) {
+        this->doLog(std::string("Error stopping process: ") + e.what(),
+                    Log::LogLevel::ERR, process.getName());
+        continue;
+      }
     }
   }
 }
@@ -333,6 +286,93 @@ std::vector<std::string> Program::getStatusProcesses() const {
                             ";en attente");
   }
   return programStatus;
+}
+
+void Program::superviseProcesses() {
+  if (this->_processes.empty()) {
+    this->doLog("No processes to supervise", Log::LogLevel::WARNING, "");
+    return;
+  }
+  bool unexpected_exit;
+  pid_t pid;
+  int status;
+  for (auto &process : this->_processes) {
+    unexpected_exit = false;
+    if (process.getPid() == -1) {
+      continue;
+    }
+    pid = waitpid(process.getPid(), &status, WNOHANG);
+    if (pid == -1) {
+      // Error occurred while waiting for the process
+      this->doLog("Error waiting for process " + process.getName() + ": " +
+                      strerror(errno),
+                  Log::LogLevel::ERR, process.getName());
+      continue;
+    } else if (pid == 0) {
+      // Process is still running
+      if (process.getState() == Process::State::STARTING) {
+        if (!process.diffTime(this->_startdelay)) {
+          process.setState(Process::State::RUNNING);
+          process.setTime();
+          this->doLog("Process " + process.getName() + " is now RUNNING",
+                      Log::LogLevel::INFO, process.getName());
+        }
+      } else if (process.getState() == Process::State::STOPPING) {
+        // Process is stopping, check if it has stopped
+        if (!process.diffTime(this->_stoptimeout)) {
+          this->doLog("Process " + process.getName() +
+                          " did not stop in time, sending KILL signal",
+                      Log::LogLevel::WARNING, process.getName());
+          kill(process.getPid(), SIGKILL);
+        }
+      }
+    } else {
+      // Process has exited
+      int exit_status = WEXITSTATUS(status);
+      if (process.getState() == Process::State::STARTING) {
+        process.setInfoMsg("Exited too quickly (process log may have details)");
+      }
+      if (std::find(this->_exitcodes.begin(), this->_exitcodes.end(),
+                    exit_status) != this->_exitcodes.end()) {
+        this->doLog(
+            "Process " + process.getName() +
+                " exited with expected code: " + std::to_string(exit_status),
+            Log::LogLevel::NOTICE, process.getName());
+      } else {
+        this->doLog(
+            "Process " + process.getName() +
+                " exited with unexpected code: " + std::to_string(exit_status),
+            Log::LogLevel::ERR, process.getName());
+        unexpected_exit = true;
+      }
+      if (this->_restart == Restart::TRUE ||
+          (this->_restart == Restart::UNEXPECTED && unexpected_exit)) {
+        if (process.getNbRestart() < this->_restartretry) {
+          process.incrementNbRestart();
+          this->doLog(
+              "Restarting process " + process.getName() +
+                  ", attempt: " + std::to_string(process.getNbRestart()) +
+                  " of " + std::to_string(this->_restartretry),
+              Log::LogLevel::INFO, process.getName());
+          process.start(this->_umask, this->_workdir, this->_stdoutfile,
+                        this->_stderrfile, this->_env, this->_command);
+        } else {
+          this->doLog("Process " + process.getName() +
+                          " exceeded restart retry limit",
+                      Log::LogLevel::ERR, process.getName());
+          process.setPid(-1);
+          process.setState(Process::State::FATAL);
+        }
+      } else {
+        process.setState(Process::State::EXITED);
+        process.setPid(-1);
+        process.setInfoMsgFormattedTime();
+        this->doLog("Process " + process.getName() +
+                        " has exited and will not be restarted",
+                    Log::LogLevel::NOTICE, process.getName());
+      }
+    }
+  }
 }
 
 int convertStringToStopsignal(const std::string &str) {

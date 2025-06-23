@@ -2,7 +2,7 @@ unix_http_server:
   file: ./taskmaster.sock
 taskmasterd:
   logfile: ./logs/taskmasterd.log
-  loglevel: INFO
+  loglevel: DEBUG
 
 taskmasterctl:
   serverurl: ./taskmaster.sock
@@ -12,6 +12,8 @@ programs:
     command: /bin/ls -la #require
     directory: .
     numprocs: 3
+    autorestart: true
+    exitcodes: [0]
     stdout_logfile: ./logs/ls.log
     stderr_logfile: ./logs/ls.err.log
   - name: echoenv

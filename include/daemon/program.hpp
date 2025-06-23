@@ -47,11 +47,13 @@ public:
   std::string convertRestartToString(Restart restart);
   std::string convertStopsignalToString(int signal);
   void start(std::string name_process);
-  bool start(std::string name_process, std::string &error_msg);
+  // bool start(std::string name_process, std::string &error_msg);
   void stop(std::string name_process);
   void printProgram();
 
   std::vector<std::string> getStatusProcesses() const;
+  Process &getProcess(std::string name);
+  void superviseProcesses();
 
 private:
   std::string _name;
@@ -81,7 +83,6 @@ private:
   // std::vector<char*> setArgs(std::string rawCommand);
   // std::string setCommand(std::string rawCommand);
   void addProcess();
-  Process &getProcess(std::string name);
 };
 
 int convertStringToStopsignal(const std::string &str);

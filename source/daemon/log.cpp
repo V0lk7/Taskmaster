@@ -109,3 +109,20 @@ Log::LogLevel convertStringToLogLevel(const std::string &str) {
 		throw std::invalid_argument("Invalid log level string");
 	}
 }
+
+std::string convertLogLeveltoString(const Log::LogLevel &level) {
+	switch (level) {
+		case Log::LogLevel::ERR:
+			return "ERROR";
+		case Log::LogLevel::WARNING:
+			return "WARNING";
+		case Log::LogLevel::NOTICE:
+			return "NOTICE";
+		case Log::LogLevel::INFO:
+			return "INFO";
+		case Log::LogLevel::DEBUG:
+			return "DEBUG";
+		default:
+			throw std::invalid_argument("Invalid log level");
+	}
+}
