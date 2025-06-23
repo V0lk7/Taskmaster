@@ -285,23 +285,19 @@ bool Client::run() {
 void Client::processReply(const std::string &reply) {
   switch (_currentCmd) {
   case Commands::CMD::status:
-    cmdStatus(Utils::split(reply, " "));
+    cmdStatusAnswer(reply);
     break;
   case Commands::CMD::start:
-    if (!cmdStart(Utils::split(reply, " "))) {
-      logError("processReply() - Error starting process.");
-    }
+    cmdStartAnswer(reply);
     break;
   case Commands::CMD::stop:
-    if (!cmdStop(Utils::split(reply, " "))) {
-      logError("processReply() - Error stopping process.");
-    }
+    cmdStopAnswer(reply);
     break;
   case Commands::CMD::restart:
-    cmdRestart(Utils::split(reply, " "));
+    cmdRestartAnswer(reply);
     break;
   case Commands::CMD::reload:
-    cmdReload(Utils::split(reply, " "));
+    cmdReloadAnswer(reply);
     break;
   default:
     logError("processReply() - Unknown command received: " + reply);
@@ -310,10 +306,31 @@ void Client::processReply(const std::string &reply) {
 }
 
 // TODO implement these methods
-void Client::cmdStatusAnswer(std::string const &answer) {}
+void Client::cmdStatusAnswer(std::string const &answer) {
+  std::vector<std::string> processList = Utils::split(answer, "\n");
+  std::map<std::string, std::vector<ProcessInfo>> processMap;
+
+  for (std::string &process : processList) {
+    std::vector<std::string> processInfo = Utils::split(process, ";");
+    auto it = processMap.find(processInfo[0]);
+
+    if (it != processMap.end()) {
+      it->second.push_back({processInfo[1], processInfo[2], processInfo[3]});
+    } else {
+      processMap[processInfo[0]] = std::vector<ProcessInfo>(
+          {ProcessInfo(processInfo[1], processInfo[2], processInfo[3])});
+    }
+  }
+  displayProcessList(processMap);
+  _console.setProcessList(processMap);
+}
+
 void Client::cmdStartAnswer(std::string const &answer) {}
+
 void Client::cmdStopAnswer(std::string const &answer) {}
+
 void Client::cmdRestartAnswer(std::string const &answer) {}
+
 void Client::cmdReloadAnswer(std::string const &answer) {}
 
 void Client::cleanUp() {

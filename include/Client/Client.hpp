@@ -44,6 +44,14 @@ private:
   // void cmdRestart(std::vector<std::string> &args);
   // void cmdReload(std::vector<std::string> &args);
   // void cmdQuit(std::vector<std::string> &args);
+  
+  void processReply(const std::string &);
+
+  void cmdStatusAnswer(std::string const &);
+  void cmdStartAnswer(std::string const &);
+  void cmdStopAnswer(std::string const &);
+  void cmdRestartAnswer(std::string const &);
+  void cmdReloadAnswer(std::string const &);
 
   bool askUserConfirmation(std::string const &);
 
