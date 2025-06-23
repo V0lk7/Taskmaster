@@ -19,6 +19,12 @@ public:
   void cleanUp();
 
 private:
+  struct CmdRequest {
+    Commands::CMD cmd;
+    std::vector<std::string> args;
+    std::string daemonAnswer;
+  };
+
   State _state = State::idle;
 
   Console &_console;
@@ -28,6 +34,9 @@ private:
 
   Commands::CMD _currentCmd = Commands::CMD::none;
 
+  std::queue<CmdRequest> _cmdQueue;
+  CmdRequest _currentCmdRequest;
+
   static constexpr int TIMEOUT = 100;
   static constexpr int MAX_EVENTS = 2;
 
@@ -36,17 +45,19 @@ private:
   bool setUpSigaction();
   static void signalHandler(int);
 
-  // bool registerCommands();
+  void addCmdToQueue(std::vector<std::string> &);
 
-  // void cmdStatus(std::vector<std::string> &args);
-  // bool cmdStart(std::vector<std::string> &args);
-  // bool cmdStop(std::vector<std::string> &args);
-  // void cmdRestart(std::vector<std::string> &args);
-  // void cmdReload(std::vector<std::string> &args);
-  // void cmdQuit(std::vector<std::string> &args);
-  
-  void processReply(const std::string &);
+  void sendCmd(const std::string &, std::vector<std::string> &);
 
+  bool processCmd();
+  void cmdQuit(CmdRequest &);
+  void cmdExit(CmdRequest &);
+  bool cmdStatus(CmdRequest &);
+  bool cmdStart(CmdRequest &);
+  bool cmdStop(CmdRequest &);
+  bool cmdReload(CmdRequest &);
+
+  void processReply(const Commands::CMD &, const std::string &);
   void cmdStatusAnswer(std::string const &);
   void cmdStartAnswer(std::string const &);
   void cmdStopAnswer(std::string const &);

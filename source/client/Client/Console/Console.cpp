@@ -4,6 +4,10 @@
 
 std::vector<std::string> Console::_processList = {};
 
+const std::vector<std::string> Console::_commands = {
+    Commands::RELOAD, Commands::QUIT, Commands::STATUS,
+    Commands::START,  Commands::STOP, Commands::RESTART};
+
 Console &Console::Instance() {
   static Console _instance;
 
@@ -64,68 +68,51 @@ void Console::handler(char *line) {
 }
 
 void Console::normalState(Console &instance, char *line) {
-  CommandHandler function;
-  CommandMap const &commands = instance.getCommands();
-  CommandMap::const_iterator it;
+  CommandHandler function = instance._cmdHandler;
   std::vector<std::string> tokens = {};
 
   if (!line) {
-    it = commands.find("quit");
-
-    if (it == commands.cend()) {
-      return;
-    }
-    function = it->second;
+    tokens.push_back(Commands::QUIT);
     function(tokens);
-    rl_callback_handler_remove();
-  } else {
-    std::string str(line);
+    return;
+  }
+  std::string str(line);
 
-    Utils::trim(str);
-    if (!str.empty()) {
-      add_history(str.c_str());
+  Utils::trim(str);
+  if (!str.empty()) {
+    add_history(str.c_str());
 
-      tokens = Utils::split(str, " ");
+    tokens = Utils::split(str, " ");
 
-      if (!tokens.empty()) {
-        it = commands.find(tokens[0]);
-
-        if (it == commands.cend()) {
-          std::cout << "*** Unknown syntax: " << tokens[0] << std::endl;
-        } else {
-          it->second(tokens);
-        }
-      }
+    if (!tokens.empty()) {
+      function(tokens);
     }
-    rl_replace_line("", 0);
-    rl_on_new_line();
   }
 }
 
+void Console::resetPrompt() {
+  rl_replace_line("", 0);
+  rl_on_new_line();
+}
+
 void Console::questionState(Console &instance, char *line) {
-  std::string str("");
 
   if (line) {
-    str = line;
+    std::string str(line);
     instance._ansFuction(str);
+    free(line);
+    rl_set_prompt(">>> ");
+    rl_replace_line("", 0);
+    rl_on_new_line();
+    instance._state = State::normal;
   } else {
-    CommandMap const &commands = instance.getCommands();
-    auto it = commands.find("quit");
+    CommandHandler function = instance._cmdHandler;
     std::vector<std::string> tokens = {};
 
-    if (it == commands.cend()) {
-      return;
-    }
-    CommandHandler function = it->second;
-
+    tokens.push_back("quit");
     function(tokens);
     rl_callback_handler_remove();
   }
-
-  rl_set_prompt(">>> ");
-  rl_replace_line("", 0);
-  rl_on_new_line();
-  instance._state = State::normal;
 }
 
 void Console::setQuestionState(std::string const &newPrompt,
@@ -214,12 +201,12 @@ char *Console::commandGenerator(const char *text, int state) {
     matches.clear();
     matchIndex = 0;
 
-    const auto &commands = Console::Instance().getCommands();
+    const auto &commands = Console::_commands;
     size_t len = strlen(text);
 
-    for (const auto &pair : commands) {
-      if (pair.first.compare(0, len, text) == 0) {
-        matches.push_back(pair.first);
+    for (const auto &cmd : commands) {
+      if (cmd.compare(0, len, text) == 0) {
+        matches.push_back(cmd);
       }
     }
   }

@@ -18,9 +18,11 @@ public:
   void setReadline();
   void disableHandler();
   void enableHandler();
-  bool registerCmd(const std::string &, CommandHandler);
+  // bool registerCmd(const std::string &, CommandHandler);
+  //
   void readCharRead(void);
   void cleanUp();
+  void resetPrompt();
 
   void setQuestionState(std::string const &, answerFunction);
   State const &getState() const;
@@ -35,6 +37,7 @@ private:
   CommandHandler _cmdHandler;
 
   static std::vector<std::string> _processList;
+  static const std::vector<std::string> _commands;
 
   static void handler(char *);
   static void normalState(Console &instance, char *line);

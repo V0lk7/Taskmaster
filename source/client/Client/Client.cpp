@@ -27,9 +27,10 @@ bool Client::setupClient(std::string const &conf) {
     return false;
   }
 
-  // if (!this->registerCommands()) {
-  //   return false;
-  // }
+  Console::CommandHandler cmdHandler = [this](std::vector<std::string> &args) {
+    addCmdToQueue(args);
+  };
+  _console.setCommandHandler(cmdHandler);
 
   // std::vector<std::string> cmd({Commands::STATUS});
   // cmdStatus(cmd);
@@ -71,170 +72,117 @@ std::string Client::extractSocket(std::string const &conf, bool &err) {
   }
 }
 
-// bool Client::registerCommands() {
-//   Console::CommandHandler status = [this](std::vector<std::string> &args) {
-//     cmdStatus(args);
-//   };
-//   Console::CommandHandler start = [this](std::vector<std::string> &args) {
-//     cmdStart(args);
-//   };
-//   Console::CommandHandler stop = [this](std::vector<std::string> &args) {
-//     cmdStop(args);
-//   };
-//   Console::CommandHandler restart = [this](std::vector<std::string> &args) {
-//     cmdRestart(args);
-//   };
-//   Console::CommandHandler reload = [this](std::vector<std::string> &args) {
-//     cmdReload(args);
-//   };
-//   Console::CommandHandler quit = [this](std::vector<std::string> &args) {
-//     cmdQuit(args);
-//   };
-//
-//   if (!_console.registerCmd(Commands::STATUS, status) ||
-//       !_console.registerCmd(Commands::START, start) ||
-//       !_console.registerCmd(Commands::STOP, stop) ||
-//       !_console.registerCmd(Commands::RESTART, restart) ||
-//       !_console.registerCmd(Commands::RELOAD, reload) ||
-//       !_console.registerCmd(Commands::QUIT, quit)) {
-//     return false;
-//   }
-//
-//   return true;
-// }
+void Client::addCmdToQueue(std::vector<std::string> &args) {
+  Commands::CMD cmd = Commands::getCommand(args[0]);
+  args.erase(args.begin());
 
-// TODO RIGHT HERE
-void Client::sendCmd(std::vector<std::string> &args) {
-  if (args[0] == "quit" || args[0] == "exit") {
-    _state = State::exit;
+  if (cmd == Commands::CMD::none) {
+    std::cout << "*** Unknown syntax: " << args[0] << std::endl;
+    std::cout << "Type 'help' for help." << std::endl;
     return;
   }
+
+  if (cmd == Commands::CMD::restart) {
+    if (args.size() == 0) {
+      _cmdQueue.push({Commands::CMD::start, {}, ""});
+      _cmdQueue.push({Commands::CMD::stop, {}, ""});
+    } else {
+      for (auto &arg : args) {
+        _cmdQueue.push({Commands::CMD::stop, {arg}, ""});
+      }
+      for (auto &arg : args) {
+        _cmdQueue.push({Commands::CMD::start, {arg}, ""});
+      }
+    }
+  } else {
+    if (args.size() == 0) {
+      _cmdQueue.push({cmd, {}, ""});
+    } else {
+      for (auto &arg : args) {
+        _cmdQueue.push({cmd, {arg}, ""});
+      }
+    }
+  }
+}
+
+// TODO RIGHT HERE
+void Client::sendCmd(const std::string &cmd, std::vector<std::string> &args) {
+  args.insert(args.begin(), cmd);
   bool error = _request.sendMsg(args);
 
   if (!error) {
     _state = State::waitingReply;
-    _currentCmd = Commands::getCommand(args[0]);
+    _currentCmd = Commands::getCommand(cmd);
   }
 }
 
-void Client::cmdStatus(std::vector<std::string> &args) {
-  int error = 0;
-  std::string response = _request.sendMsg(args, error);
-
-  if (error == 0) {
-    // response format is programName:processName:status:pid:uptime\n...
-    std::vector<std::string> processList = Utils::split(response, "\n");
-    std::map<std::string, std::vector<ProcessInfo>> processMap;
-
-    for (std::string &process : processList) {
-      std::vector<std::string> processInfo = Utils::split(process, ";");
-      auto it = processMap.find(processInfo[0]);
-
-      if (it != processMap.end()) {
-        it->second.push_back({processInfo[1], processInfo[2], processInfo[3]});
-      } else {
-        processMap[processInfo[0]] = std::vector<ProcessInfo>(
-            {ProcessInfo(processInfo[1], processInfo[2], processInfo[3])});
-      }
-    }
-    displayProcessList(processMap);
-    _console.setProcessList(processMap);
-  }
+void Client::cmdQuit(CmdRequest &request) {
+  (void)request; // Unused parameter
+  _state = State::exit;
+  cleanUp();
+  std::cout << "Exiting client..." << std::endl;
+  exit(0);
 }
 
-void Client::displayProcessList(
-    const std::map<std::string, std::vector<ProcessInfo>> &processMap) {
-
-  for (const auto &pair : processMap) {
-    const std::string &programName = pair.first;
-    const std::vector<ProcessInfo> &processes = pair.second;
-
-    if (pair.second.size() == 1) {
-      std::cout << std::left << std::setw(33) << programName << std::left
-                << std::setw(10) << pair.second[0].status << std::left
-                << std::left << pair.second[0].message << std::endl;
-    } else {
-      for (const ProcessInfo &process : processes) {
-        const std::string name = programName + ":" + pair.second[0].name;
-        std::cout << std::left << std::setw(33) << name << std::left
-                  << std::setw(10) << process.status << std::left
-                  << process.message << std::endl;
-      }
-    }
-  }
+void Client::cmdExit(CmdRequest &request) {
+  (void)request; // Unused parameter
+  _state = State::exit;
+  cleanUp();
+  std::cout << "Exiting client..." << std::endl;
+  exit(0);
 }
 
-bool Client::cmdStart(std::vector<std::string> &args) {
-  if (args.size() <= 1) {
+bool Client::cmdStatus(CmdRequest &request) {
+  std::cout << "cmdStatus()" << std::endl;
+  std::cout << "args size: " << request.args.size() << std::endl;
+  if (request.args.size() != 0) {
+    std::cout << "WTF" << std::endl;
+    cmdErrorMsg(Commands::CMD::status);
+    return false;
+  }
+
+  sendCmd(Commands::cmdToString(request.cmd), request.args);
+  _state = State::waitingReply;
+  return true;
+}
+
+bool Client::cmdStart(CmdRequest &request) {
+  if (request.args.size() <= 1) {
     cmdErrorMsg(Commands::CMD::start);
-  } else {
-    int error = 0;
-    std::string response = _request.sendMsg(args, error);
-
-    if (error == 0) {
-      std::cout << response << std::endl;
-    } else {
-      return false;
-    }
+    return false;
   }
+  sendCmd(Commands::cmdToString(request.cmd), request.args);
+  _state = State::waitingReply;
   return true;
 }
 
-bool Client::cmdStop(std::vector<std::string> &args) {
-  if (args.size() <= 1) {
+bool Client::cmdStop(CmdRequest &request) {
+  if (request.args.size() <= 1) {
     cmdErrorMsg(Commands::CMD::stop);
-  } else {
-    int error = 0;
-    std::string response = _request.sendMsg(args, error);
-
-    if (error == 0) {
-      std::cout << response << std::endl;
-    } else {
-      return false;
-    }
+    return false;
   }
+  sendCmd(Commands::cmdToString(request.cmd), request.args);
+  _state = State::waitingReply;
   return true;
 }
 
-void Client::cmdRestart(std::vector<std::string> &args) {
-  if (args.size() <= 1) {
-    cmdErrorMsg(Commands::CMD::restart);
-  } else {
-    args[0] = "stop";
-    if (!cmdStop(args)) {
-      return;
-    }
-    args[0] = "start";
-    cmdStart(args);
-  }
-}
-
-void Client::cmdReload(std::vector<std::string> &args) {
-  if (args.size() > 1) {
+bool Client::cmdReload(CmdRequest &request) {
+  if (request.args.size() != 0) {
     cmdErrorMsg(Commands::CMD::reload);
-    return;
+    return false;
   }
 
-  _userAnswer = "Y/n";
-  std::string prompt =
-      "Really restart the remote taskmasterd process " + _userAnswer + "? ";
+  std::string prompt = "Really restart the remote taskmasterd process Y/n? ";
 
   _console.setQuestionState(prompt, [this](std::string arg) {
-    if (arg.empty() || arg == "y" || arg == "Y" || arg == "yes") {
-      int error = 0;
-      std::string response =
-          _request.sendMsg(std::vector<std::string>({Commands::RELOAD}), error);
-
-      if (error == 0) {
-        std::cout << response << std::endl;
-      }
-    } else {
-      std::cout << "Reload aborted." << std::endl;
+    if (arg.empty() || arg == "y" || arg == "Y" || arg == "yes" ||
+        arg == "YES") {
+      sendCmd(Commands::cmdToString(_currentCmdRequest.cmd),
+              _currentCmdRequest.args);
     }
   });
+  return true;
 }
-
-// void Client::cmdQuit(std::vector<std::string> &) { _state = State::exit; }
 
 bool Client::run() {
   if (_state == State::idle) {
@@ -259,22 +207,34 @@ bool Client::run() {
       int fd = events[i].data.fd;
 
       if (fd == STDIN_FILENO) {
-        if (_state != State::asking && _state != State::waitingReply) {
+        if (_state == State::asking || _state == State::running) {
           _console.readCharRead();
         }
       } else if (fd == nn_fd) {
         if (_state == State::waitingReply) {
+          std::cout << "aled 1" << std::endl;
           std::string answer;
 
           if (!_request.receiveMsg(answer)) {
-            logError("run() - Error receiving message from server.");
+            std::cout << "aled 2" << std::endl;
+            logError("Internal error! Can\'t receive message from server.");
+            _state = State::running;
           } else {
-            processReply(answer);
+            std::cout << "aled 3" << std::endl;
+            processReply(_currentCmdRequest.cmd, answer);
           }
+          std::cout << "aled 3.5" << std::endl;
+          _console.resetPrompt();
+          _state = State::running;
         }
-        _state = State::running;
-      } else {
-        continue;
+      }
+    }
+    if (_state == State::running && !_cmdQueue.empty()) {
+      std::cout << "aled 4" << std::endl;
+      if (!processCmd()) {
+        std::cout << "aled 5" << std::endl;
+        _currentCmdRequest = CmdRequest();
+        _cmdQueue = std::queue<CmdRequest>();
       }
     }
   }
@@ -282,8 +242,33 @@ bool Client::run() {
   return true;
 }
 
-void Client::processReply(const std::string &reply) {
-  switch (_currentCmd) {
+bool Client::processCmd() {
+  _currentCmdRequest = _cmdQueue.front();
+  _cmdQueue.pop();
+
+  switch (_currentCmdRequest.cmd) {
+  case Commands::CMD::quit:
+    cmdQuit(_currentCmdRequest);
+    break;
+  case Commands::CMD::exit:
+    cmdExit(_currentCmdRequest);
+    break;
+  case Commands::CMD::status:
+    return cmdStatus(_currentCmdRequest);
+  case Commands::CMD::start:
+    return cmdStart(_currentCmdRequest);
+  case Commands::CMD::stop:
+    return cmdStop(_currentCmdRequest);
+  case Commands::CMD::reload:
+    return cmdReload(_currentCmdRequest);
+  default:
+    return false;
+  }
+  return true;
+}
+
+void Client::processReply(const Commands::CMD &cmd, const std::string &reply) {
+  switch (cmd) {
   case Commands::CMD::status:
     cmdStatusAnswer(reply);
     break;
@@ -305,7 +290,6 @@ void Client::processReply(const std::string &reply) {
   }
 }
 
-// TODO implement these methods
 void Client::cmdStatusAnswer(std::string const &answer) {
   std::vector<std::string> processList = Utils::split(answer, "\n");
   std::map<std::string, std::vector<ProcessInfo>> processMap;
@@ -325,13 +309,43 @@ void Client::cmdStatusAnswer(std::string const &answer) {
   _console.setProcessList(processMap);
 }
 
-void Client::cmdStartAnswer(std::string const &answer) {}
+void Client::displayProcessList(
+    const std::map<std::string, std::vector<ProcessInfo>> &processMap) {
 
-void Client::cmdStopAnswer(std::string const &answer) {}
+  for (const auto &pair : processMap) {
+    const std::string &programName = pair.first;
+    const std::vector<ProcessInfo> &processes = pair.second;
 
-void Client::cmdRestartAnswer(std::string const &answer) {}
+    if (pair.second.size() == 1) {
+      std::cout << std::left << std::setw(33) << programName << std::left
+                << std::setw(10) << pair.second[0].status << std::left
+                << std::left << pair.second[0].message << std::endl;
+    } else {
+      for (const ProcessInfo &process : processes) {
+        const std::string name = programName + ":" + pair.second[0].name;
+        std::cout << std::left << std::setw(33) << name << std::left
+                  << std::setw(10) << process.status << std::left
+                  << process.message << std::endl;
+      }
+    }
+  }
+}
 
-void Client::cmdReloadAnswer(std::string const &answer) {}
+void Client::cmdStartAnswer(std::string const &answer) {
+  std::cout << answer << std::endl;
+}
+
+void Client::cmdStopAnswer(std::string const &answer) {
+  std::cout << answer << std::endl;
+}
+
+void Client::cmdRestartAnswer(std::string const &answer) {
+  std::cout << answer << std::endl;
+}
+
+void Client::cmdReloadAnswer(std::string const &answer) {
+  std::cout << answer << std::endl;
+}
 
 void Client::cleanUp() {
   _console.cleanUp();
@@ -374,6 +388,7 @@ void Client::logError(const std::string &msg, const int &error) {
   }
 }
 
+// TODO pas besoin de message d'erreur pour status
 void Client::cmdErrorMsg(Commands::CMD const &cmd) const {
   switch (cmd) {
   case Commands::CMD::start:

@@ -5,7 +5,17 @@
 
 class Commands {
 public:
-  enum class CMD { status, start, stop, restart, reload, quit, none };
+  enum class CMD {
+    status,
+    start,
+    stop,
+    restart,
+    reload,
+    quit,
+    exit,
+    help,
+    none
+  };
 
   static constexpr auto STATUS = "status";
   static constexpr auto START = "start";
@@ -13,6 +23,8 @@ public:
   static constexpr auto RESTART = "restart";
   static constexpr auto RELOAD = "reload";
   static constexpr auto QUIT = "quit";
+  static constexpr auto HELP = "help";
+  static constexpr auto EXIT = "exit";
 
   static CMD getCommand(const std::string &cmd) {
     if (cmd == STATUS) {
@@ -27,8 +39,35 @@ public:
       return CMD::reload;
     } else if (cmd == QUIT) {
       return CMD::quit;
+    } else if (cmd == EXIT) {
+      return CMD::exit;
+    } else if (cmd == HELP) {
+      return CMD::help;
     }
     return CMD::none;
+  }
+
+  static std::string cmdToString(CMD &cmd) {
+    switch (cmd) {
+    case CMD::status:
+      return STATUS;
+    case CMD::start:
+      return START;
+    case CMD::stop:
+      return STOP;
+    case CMD::restart:
+      return RESTART;
+    case CMD::reload:
+      return RELOAD;
+    case CMD::quit:
+      return QUIT;
+    case CMD::exit:
+      return EXIT;
+    case CMD::help:
+      return HELP;
+    default:
+      return "";
+    }
   }
 };
 
