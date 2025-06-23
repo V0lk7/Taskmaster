@@ -6,7 +6,8 @@
 constexpr char Daemon::IPC[];
 constexpr char Daemon::UNIX[];
 
-Daemon::Daemon(std::string socketPath, Log logInfo) {
+Daemon::Daemon(std::string socketPath, Log logInfo, std::string confPath){
+  this->confPath = confPath;
   this->socketPath = socketPath;
   this->socketFd = -1;
   this->sockEndPoint = -1;
@@ -241,6 +242,15 @@ void Daemon::printDaemon() {
 
 std::vector<Program> Daemon::getPrograms() { return this->programs; }
 
+Program &Daemon::getProgram(std::string name) {
+  for (auto &program : this->programs) {
+	if (program.getName() == name) {
+	  return program;
+	}
+  }
+  throw std::runtime_error("Program " + name + " not found.");
+}
+
 void Daemon::supervisePrograms() {
   if (this->programs.empty()) {
 	this->sendLogs("No programs to supervise.", "WARNING");
@@ -250,3 +260,5 @@ void Daemon::supervisePrograms() {
 	program.superviseProcesses();
   }
 }
+
+std::string Daemon::getConfPath() const { return this->confPath; }

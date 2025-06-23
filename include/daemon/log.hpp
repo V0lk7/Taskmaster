@@ -27,12 +27,15 @@ public:
 	Log(std::string name, Type type, LogLevel level, const std::string logfile);
 	~Log();
 
+	bool operator==(const Log &other) const;
+
 	LogLevel getLogLevel();
+	std::string getName() const;
 
 	void doLog(const std::string &message);
 	void printLog();
 
-	private:
+private:
 	std::string _name;
 	Type _type;
 	LogLevel _level;

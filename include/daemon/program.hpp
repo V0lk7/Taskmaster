@@ -48,6 +48,7 @@ class Program {
 		mode_t getUmask() const;
 		void addLog(const Log &log);
 		std::string getStates();
+		std::vector<Log> getLogs() const;
 
 		void doLog(const std::string &message, Log::LogLevel level, std::string name_process);
 		std::string convertRestartToString(Restart restart);

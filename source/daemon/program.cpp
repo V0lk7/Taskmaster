@@ -149,6 +149,10 @@ void Program::addLog(const Log &log) {
 	this->_logs.push_back(log);
 }
 
+std::vector<Log> Program::getLogs() const {
+	return this->_logs;
+}
+
 void Program::doLog(const std::string &message, Log::LogLevel level, std::string name_process) {
 	time_t now = time(nullptr);
 	std::tm *ltm = std::localtime(&now);
