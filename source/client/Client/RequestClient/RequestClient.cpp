@@ -1,5 +1,4 @@
 #include "Client/RequestClient/RequestClient.hpp"
-#include "common/Commands.hpp"
 #include "common/Utils.hpp"
 
 constexpr char RequestClient::IPC[];
@@ -13,7 +12,7 @@ RequestClient::~RequestClient() {
   }
 }
 
-void RequestClient::setsockFile(std::string const &src) {
+void RequestClient::setSockFile(std::string const &src) {
   if (src != _sockFile) {
     _sockFile = src;
   }
@@ -32,12 +31,6 @@ bool RequestClient::connectToSocket() {
 
   if (_sockFd == -1) {
     logError("connectToDaemon - nn_socket() failed", errno);
-    return false;
-  }
-  size_t sz = sizeof(_rcvFd);
-
-  if (nn_getsockopt(_sockFd, NN_SOL_SOCKET, NN_RCVFD, &_rcvFd, &sz) == -1) {
-    logError("connectToDaemon - nn_getsockopt() failed", errno);
     return false;
   }
 
@@ -61,7 +54,16 @@ bool RequestClient::connectToSocket() {
     }
     return false;
   }
+  size_t sz = sizeof(_rcvFd);
+
+  if (nn_getsockopt(_sockFd, NN_SOL_SOCKET, NN_RCVFD, &_rcvFd, &sz) == -1) {
+    logError("connectToDaemon - nn_getsockopt() failed", errno);
+    return false;
+  }
   _state = State::connected;
+  if (_addFdToEpoll) {
+    _addFdToEpoll();
+  }
   return true;
 }
 
@@ -93,18 +95,12 @@ bool RequestClient::socketFileExists() {
 
 int RequestClient::getrcvFd() const { return _rcvFd; }
 
-void RequestClient::cleanUp() {
-  _state = State::idle;
-  _rcvFd = -1;
-
-  if (_sockFd > -1) {
-    nn_close(_sockFd);
-  }
-}
-
 bool RequestClient::sendMsg(std::vector<std::string> const &msg) {
   if (_state == State::idle) {
     if (!connectToSocket()) {
+      if (_removeFdFromEpoll) {
+        _removeFdFromEpoll();
+      }
       return false;
     }
   }
@@ -120,19 +116,13 @@ bool RequestClient::sendMsg(std::vector<std::string> const &msg) {
   ssize_t s = nn_send(_sockFd, msgContent.c_str(), msgContent.size(), 0);
 
   if (s == -1 || s < static_cast<ssize_t>(msgContent.size())) {
+    if (_removeFdFromEpoll) {
+      _removeFdFromEpoll();
+    }
     _state = State::idle;
     logError("Connection refused ! - ", errno);
     return false;
   }
-
-  // std::string answer;
-
-  // if (!tryRecv(answer)) {
-  //   _state = State::idle;
-  //   logError("Connection refused ! - ", errno);
-  //   cleanUp();
-  //   error = -1;
-  // }
 
   _state = State::waitingResponse;
   return true;
@@ -152,11 +142,15 @@ bool RequestClient::receiveMsg(std::string &answer) {
 
   switch (bytes) {
   case -1:
+    if (_removeFdFromEpoll) {
+      _removeFdFromEpoll();
+    }
     return false;
   default:
     answer = std::string(static_cast<char *>(buffer), bytes);
     nn_freemsg(buffer);
     buffer = nullptr;
+    _state = State::connected;
     return true;
   }
 }
@@ -168,4 +162,13 @@ void RequestClient::logError(const std::string &msg, const int &error) {
   } else {
     std::cerr << std::endl;
   }
+}
+
+void RequestClient::setAddFdToEpoll(std::function<void()> const &addFdToEpoll) {
+  _addFdToEpoll = addFdToEpoll;
+}
+
+void RequestClient::setRemoveFdFromEpoll(
+    std::function<void()> const &removeFdFromEpoll) {
+  _removeFdFromEpoll = removeFdFromEpoll;
 }

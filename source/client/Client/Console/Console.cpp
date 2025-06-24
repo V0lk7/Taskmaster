@@ -5,8 +5,8 @@
 std::vector<std::string> Console::_processList = {};
 
 const std::vector<std::string> Console::_commands = {
-    Commands::RELOAD, Commands::QUIT, Commands::STATUS,
-    Commands::START,  Commands::STOP, Commands::RESTART};
+    Commands::RELOAD, Commands::QUIT,    Commands::STATUS, Commands::START,
+    Commands::STOP,   Commands::RESTART, Commands::EXIT,   Commands::HELP};
 
 Console &Console::Instance() {
   static Console _instance;
@@ -16,7 +16,11 @@ Console &Console::Instance() {
 
 Console::Console() {}
 
-Console::~Console() {}
+Console::~Console() {
+  rl_callback_handler_remove();
+  clear_history();
+  rl_clear_history();
+}
 
 void Console::setProcessList(
     std::map<std::string, std::vector<ProcessInfo>> const &newProcessList) {
@@ -37,18 +41,23 @@ void Console::setReadline() {
   rl_attempted_completion_function = &Console::completionHook;
 
   rl_callback_handler_install(">>> ", &Console::handler);
+  _handlerEnabled = true;
 }
 
-void Console::disableHandler() { rl_callback_handler_remove(); }
+void Console::disableHandler() {
+  if (!_handlerEnabled) {
+    return;
+  }
+  rl_callback_handler_remove();
+  _handlerEnabled = false;
+}
 
 void Console::enableHandler() {
+  if (_handlerEnabled) {
+    return;
+  }
   rl_callback_handler_install(">>> ", &Console::handler);
-}
-
-void Console::cleanUp() {
-  rl_callback_handler_remove();
-  clear_history();
-  rl_clear_history();
+  _handlerEnabled = true;
 }
 
 void Console::handler(char *line) {
@@ -84,34 +93,31 @@ void Console::normalState(Console &instance, char *line) {
 
     tokens = Utils::split(str, " ");
 
-    if (!tokens.empty()) {
-      function(tokens);
-    }
+    function(tokens);
   }
 }
 
 void Console::resetPrompt() {
   rl_replace_line("", 0);
   rl_on_new_line();
+  rl_redisplay();
+}
+
+void Console::clearPrompt() {
+  rl_replace_line("", 0);
+  rl_crlf();
 }
 
 void Console::questionState(Console &instance, char *line) {
-
   if (line) {
     std::string str(line);
     instance._ansFuction(str);
-    free(line);
     rl_set_prompt(">>> ");
     rl_replace_line("", 0);
     rl_on_new_line();
     instance._state = State::normal;
   } else {
-    CommandHandler function = instance._cmdHandler;
-    std::vector<std::string> tokens = {};
-
-    tokens.push_back("quit");
-    function(tokens);
-    rl_callback_handler_remove();
+    instance._eofHandler();
   }
 }
 
@@ -123,13 +129,19 @@ void Console::setQuestionState(std::string const &newPrompt,
   instance._ansFuction = function;
   rl_set_prompt(newPrompt.c_str());
   rl_replace_line("", 0);
+  rl_redisplay();
 }
 
 void Console::setCommandHandler(CommandHandler &handler) {
   _cmdHandler = handler;
 }
 
-void Console::readCharRead() { rl_callback_read_char(); }
+void Console::readCharRead() {
+  if (!_handlerEnabled) {
+    return;
+  }
+  rl_callback_read_char();
+}
 
 char **Console::completionHook(const char *text, int start, int end) {
   (void)end;

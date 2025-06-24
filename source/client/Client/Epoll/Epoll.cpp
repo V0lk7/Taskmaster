@@ -2,14 +2,12 @@
 
 Epoll::Epoll() {}
 
-Epoll::~Epoll() { cleanUp(); };
-
-void Epoll::cleanUp() {
+Epoll::~Epoll() {
   if (_epollFd > -1) {
     close(_epollFd);
     _epollFd = -1;
   }
-}
+};
 
 bool Epoll::init(int flags) {
   _epollFd = epoll_create1(flags);
@@ -36,11 +34,31 @@ bool Epoll::addFd(int fd, bool modifyIt) {
 
   ev.events = EPOLLIN;
   ev.data.fd = fd;
-
   if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, fd, &ev) < 0) {
-    std::cerr << "[Error] - Epoll::addFdToEpoll - epoll_ctl() failed : errno = "
-              << errno << std::endl;
-    return false;
+    if (errno == EEXIST) {
+      std::cerr
+          << "[Error] - Epoll::addFdToEpoll - epoll_ctl() failed : errno = "
+          << errno << std::endl;
+      return false;
+    }
+  }
+  // if (epoll_ctl(_epollFd, EPOLL_CTL_ADD, fd, &ev) < 0) {
+  //   std::cerr << "[Error] - Epoll::addFdToEpoll - epoll_ctl() failed :
+  //   errno = "
+  //             << errno << std::endl;
+  //   return false;
+  // }
+  return true;
+}
+
+bool Epoll::removeFd(int fd) {
+  if (epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, nullptr) < 0) {
+    if (errno == ENOENT) {
+      std::cerr << "[Error] - Epoll::removeFdFromEpoll - epoll_ctl() failed : "
+                   "errno = "
+                << errno << std::endl;
+      return false;
+    }
   }
   return true;
 }

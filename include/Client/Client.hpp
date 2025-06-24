@@ -16,7 +16,6 @@ public:
 
   bool setupClient(std::string const &conf);
   bool run();
-  void cleanUp();
 
 private:
   struct CmdRequest {
@@ -47,7 +46,7 @@ private:
 
   void addCmdToQueue(std::vector<std::string> &);
 
-  void sendCmd(const std::string &, std::vector<std::string> &);
+  bool sendCmd(const std::string &, std::vector<std::string> &);
 
   bool processCmd();
   void cmdQuit(CmdRequest &);
@@ -55,7 +54,9 @@ private:
   bool cmdStatus(CmdRequest &);
   bool cmdStart(CmdRequest &);
   bool cmdStop(CmdRequest &);
+  bool cmdRestart(CmdRequest &);
   bool cmdReload(CmdRequest &);
+  void cmdHelp(CmdRequest &);
 
   void processReply(const Commands::CMD &, const std::string &);
   void cmdStatusAnswer(std::string const &);
@@ -69,7 +70,8 @@ private:
   void
   displayProcessList(const std::map<std::string, std::vector<ProcessInfo>> &);
 
-  void cmdErrorMsg(Commands::CMD const &) const;
+  void cmdErrorMsg(Commands::CMD const &,
+                   std::string const name = "Error") const;
   void logError(const std::string &msg, const int &error = -1);
 
   Client();

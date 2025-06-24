@@ -11,7 +11,7 @@ Client &Client::Instance() {
   return _instance;
 }
 
-Client::~Client() { cleanUp(); }
+Client::~Client() {}
 
 bool Client::setupClient(std::string const &conf) {
   bool err = false;
@@ -21,7 +21,33 @@ bool Client::setupClient(std::string const &conf) {
     return false;
   }
 
-  _request.setsockFile(socket);
+  _request.setSockFile(socket);
+
+  _request.setAddFdToEpoll([this]() {
+    int rcvFd = _request.getrcvFd();
+    if (rcvFd <= 0) {
+      logError("setupClient() - Request socket not connected.");
+      return;
+    }
+    if (!_epoll.addFd(rcvFd, false)) {
+      logError("setupClient() - Failed to add request socket to epoll.");
+    }
+  });
+  _request.setRemoveFdFromEpoll([this]() {
+    int rcvFd = _request.getrcvFd();
+    if (rcvFd <= 0) {
+      return;
+    }
+    if (!_epoll.removeFd(rcvFd)) {
+      logError("setupClient() - Failed to remove request socket from epoll.");
+    }
+  });
+
+  _console.setEOFHandler([this]() {
+    _console.disableHandler();
+    _state = State::exit;
+    std::cout << "Exiting client..." << std::endl;
+  });
 
   if (!setUpSigaction()) {
     return false;
@@ -31,9 +57,6 @@ bool Client::setupClient(std::string const &conf) {
     addCmdToQueue(args);
   };
   _console.setCommandHandler(cmdHandler);
-
-  // std::vector<std::string> cmd({Commands::STATUS});
-  // cmdStatus(cmd);
 
   _console.setReadline();
 
@@ -82,93 +105,101 @@ void Client::addCmdToQueue(std::vector<std::string> &args) {
     return;
   }
 
-  if (cmd == Commands::CMD::restart) {
-    if (args.size() == 0) {
-      _cmdQueue.push({Commands::CMD::start, {}, ""});
-      _cmdQueue.push({Commands::CMD::stop, {}, ""});
-    } else {
-      for (auto &arg : args) {
-        _cmdQueue.push({Commands::CMD::stop, {arg}, ""});
-      }
-      for (auto &arg : args) {
-        _cmdQueue.push({Commands::CMD::start, {arg}, ""});
-      }
-    }
+  if (args.size() == 0) {
+    _cmdQueue.push({cmd, {}, ""});
+  } else if (cmd == Commands::CMD::help) {
+    _cmdQueue.push({cmd, args, ""});
   } else {
-    if (args.size() == 0) {
-      _cmdQueue.push({cmd, {}, ""});
-    } else {
-      for (auto &arg : args) {
-        _cmdQueue.push({cmd, {arg}, ""});
-      }
+    for (auto &arg : args) {
+      _cmdQueue.push({cmd, {arg}, ""});
     }
   }
 }
 
 // TODO RIGHT HERE
-void Client::sendCmd(const std::string &cmd, std::vector<std::string> &args) {
+bool Client::sendCmd(const std::string &cmd, std::vector<std::string> &args) {
   args.insert(args.begin(), cmd);
-  bool error = _request.sendMsg(args);
-
-  if (!error) {
-    _state = State::waitingReply;
-    _currentCmd = Commands::getCommand(cmd);
-  }
+  return _request.sendMsg(args);
 }
 
 void Client::cmdQuit(CmdRequest &request) {
   (void)request; // Unused parameter
+  _console.disableHandler();
   _state = State::exit;
-  cleanUp();
   std::cout << "Exiting client..." << std::endl;
   exit(0);
 }
 
 void Client::cmdExit(CmdRequest &request) {
   (void)request; // Unused parameter
+  _console.disableHandler();
+  _console.clearPrompt();
   _state = State::exit;
-  cleanUp();
   std::cout << "Exiting client..." << std::endl;
   exit(0);
 }
 
 bool Client::cmdStatus(CmdRequest &request) {
-  std::cout << "cmdStatus()" << std::endl;
-  std::cout << "args size: " << request.args.size() << std::endl;
-  if (request.args.size() != 0) {
-    std::cout << "WTF" << std::endl;
-    cmdErrorMsg(Commands::CMD::status);
-    return false;
+  std::cout << "Requesting status..." << std::endl;
+  _console.disableHandler();
+  if (sendCmd(Commands::cmdToString(request.cmd), request.args)) {
+    _state = State::waitingReply;
+    return true;
   }
-
-  sendCmd(Commands::cmdToString(request.cmd), request.args);
-  _state = State::waitingReply;
-  return true;
+  _console.enableHandler();
+  return false;
 }
 
 bool Client::cmdStart(CmdRequest &request) {
-  if (request.args.size() <= 1) {
+  _console.disableHandler();
+  if (request.args.size() <= 0) {
     cmdErrorMsg(Commands::CMD::start);
+    _console.enableHandler();
     return false;
   }
-  sendCmd(Commands::cmdToString(request.cmd), request.args);
-  _state = State::waitingReply;
-  return true;
+  if (sendCmd(Commands::cmdToString(request.cmd), request.args)) {
+    _state = State::waitingReply;
+    return true;
+  }
+  _console.enableHandler();
+  return false;
 }
 
 bool Client::cmdStop(CmdRequest &request) {
-  if (request.args.size() <= 1) {
+  _console.disableHandler();
+  if (request.args.size() <= 0) {
     cmdErrorMsg(Commands::CMD::stop);
+    _console.enableHandler();
     return false;
   }
-  sendCmd(Commands::cmdToString(request.cmd), request.args);
-  _state = State::waitingReply;
-  return true;
+  if (sendCmd(Commands::cmdToString(request.cmd), request.args)) {
+    _state = State::waitingReply;
+    return true;
+  }
+  _console.enableHandler();
+  return false;
+}
+
+bool Client::cmdRestart(CmdRequest &request) {
+  _console.disableHandler();
+  if (request.args.size() <= 0) {
+    cmdErrorMsg(Commands::CMD::restart);
+    _console.enableHandler();
+    return false;
+  }
+  if (sendCmd(Commands::cmdToString(request.cmd), request.args)) {
+    _state = State::waitingReply;
+    return true;
+  }
+  _console.enableHandler();
+  return false;
 }
 
 bool Client::cmdReload(CmdRequest &request) {
   if (request.args.size() != 0) {
+    _console.disableHandler();
     cmdErrorMsg(Commands::CMD::reload);
+    _console.enableHandler();
     return false;
   }
 
@@ -177,10 +208,18 @@ bool Client::cmdReload(CmdRequest &request) {
   _console.setQuestionState(prompt, [this](std::string arg) {
     if (arg.empty() || arg == "y" || arg == "Y" || arg == "yes" ||
         arg == "YES") {
-      sendCmd(Commands::cmdToString(_currentCmdRequest.cmd),
-              _currentCmdRequest.args);
+      //_console.disableHandler();
+      std::cout << "Restarting remote taskmasterd..." << std::endl;
+      if (sendCmd(Commands::cmdToString(_currentCmdRequest.cmd),
+                  _currentCmdRequest.args)) {
+        _state = State::waitingReply;
+        return;
+      }
     }
+    _state = State::running;
+    _console.enableHandler();
   });
+  _state = State::asking;
   return true;
 }
 
@@ -198,7 +237,6 @@ bool Client::run() {
   }
 
   struct epoll_event events[MAX_EVENTS];
-  int nn_fd = _request.getrcvFd();
 
   while (_state >= State::running && _state <= State::asking) {
     int nbrFd = _epoll.waitEvents(events, MAX_EVENTS, TIMEOUT);
@@ -206,39 +244,29 @@ bool Client::run() {
     for (int i = 0; i < nbrFd; ++i) {
       int fd = events[i].data.fd;
 
-      if (fd == STDIN_FILENO) {
-        if (_state == State::asking || _state == State::running) {
-          _console.readCharRead();
-        }
-      } else if (fd == nn_fd) {
+      if (fd == STDIN_FILENO && _state != State::waitingReply) {
+        _console.readCharRead();
+      } else {
         if (_state == State::waitingReply) {
-          std::cout << "aled 1" << std::endl;
           std::string answer;
 
           if (!_request.receiveMsg(answer)) {
-            std::cout << "aled 2" << std::endl;
             logError("Internal error! Can\'t receive message from server.");
             _state = State::running;
           } else {
-            std::cout << "aled 3" << std::endl;
             processReply(_currentCmdRequest.cmd, answer);
           }
-          std::cout << "aled 3.5" << std::endl;
-          _console.resetPrompt();
           _state = State::running;
         }
       }
     }
     if (_state == State::running && !_cmdQueue.empty()) {
-      std::cout << "aled 4" << std::endl;
       if (!processCmd()) {
-        std::cout << "aled 5" << std::endl;
         _currentCmdRequest = CmdRequest();
         _cmdQueue = std::queue<CmdRequest>();
       }
     }
   }
-  _console.cleanUp();
   return true;
 }
 
@@ -259,8 +287,13 @@ bool Client::processCmd() {
     return cmdStart(_currentCmdRequest);
   case Commands::CMD::stop:
     return cmdStop(_currentCmdRequest);
+  case Commands::CMD::restart:
+    return cmdRestart(_currentCmdRequest);
   case Commands::CMD::reload:
     return cmdReload(_currentCmdRequest);
+  case Commands::CMD::help:
+    cmdHelp(_currentCmdRequest);
+    break;
   default:
     return false;
   }
@@ -288,6 +321,7 @@ void Client::processReply(const Commands::CMD &cmd, const std::string &reply) {
     logError("processReply() - Unknown command received: " + reply);
     break;
   }
+  _console.enableHandler();
 }
 
 void Client::cmdStatusAnswer(std::string const &answer) {
@@ -347,12 +381,6 @@ void Client::cmdReloadAnswer(std::string const &answer) {
   std::cout << answer << std::endl;
 }
 
-void Client::cleanUp() {
-  _console.cleanUp();
-  _epoll.cleanUp();
-  _request.cleanUp();
-}
-
 bool Client::setUpSigaction() {
   struct sigaction sa;
 
@@ -370,10 +398,8 @@ bool Client::setUpSigaction() {
 }
 
 void Client::signalHandler(int signal) {
-  Client &instance = Client::Instance();
-
   (void)signal;
-  instance.cleanUp();
+  std::cout << "\nExiting client..." << std::endl;
   exit(0);
 }
 
@@ -388,34 +414,90 @@ void Client::logError(const std::string &msg, const int &error) {
   }
 }
 
-// TODO pas besoin de message d'erreur pour status
-void Client::cmdErrorMsg(Commands::CMD const &cmd) const {
+void Client::cmdErrorMsg(Commands::CMD const &cmd,
+                         std::string const name) const {
   switch (cmd) {
   case Commands::CMD::start:
-    std::cout << "Error: start requires a process name\n"
+    std::cout << name << ": start requires a process name\n"
               << "start <name>            Start a process\n"
-              << "start <name> <name>     Start multiple processes or groups."
+              << "start <name> <name>     Start multiple processes or groups.\n"
+              << "start <gname>:*         Start all processes in a group."
               << std::endl;
     break;
   case Commands::CMD::stop:
-    std::cout << "Error: stop requires a process name\n"
+    std::cout << name << ": stop requires a process name\n"
               << "stop <name>            Stop a process\n"
-              << "stop <name> <name>     Stop multiple processes or groups."
+              << "stop <name> <name>     Stop multiple processes or groups.\n"
+              << "stop <gname>:*         Stop all processes in a group."
               << std::endl;
 
     break;
   case Commands::CMD::restart:
     std::cout
-        << "Error: restart requires a process name\n"
+        << name << ": restart requires a process name\n"
         << "restart <name>            Restart a process\n"
-        << "restart <name> <name>     Restart multiple processes or groups."
+        << "restart <name> <name>     Restart multiple processes or groups.\n"
+        << "restart <gname>:*         Restart all processes in a group."
         << std::endl;
     break;
   case Commands::CMD::reload:
-    std::cout << "Error: reload accepts no arguments\n"
+    std::cout << name << ": reload accepts no arguments\n"
               << "reload          Restart the remote taskmasterd." << std::endl;
+    break;
+  case Commands::CMD::status:
+    std::cout
+        << name << ": status accept optionnal arguments\n"
+        << "status <name>           Get status for a single process\n"
+        << "status <name> <name>    Get status for multiple named processes\n"
+        << "status <gname>:*        Get status for all processes in a group\n"
+        << "status                  Get status for all processes." << std::endl;
+    break;
+  case Commands::CMD::exit:
+    std::cout << name << ": exit the client" << std::endl;
+    break;
+  case Commands::CMD::quit:
+    std::cout << name << ": quit the client" << std::endl;
+    break;
+  case Commands::CMD::help:
+    std::cout << name << ": help accepts an optional argument\n"
+              << "help                   Display this help message\n"
+              << "help <topic>           Display help on a specific topic."
+              << std::endl;
     break;
   default:
     break;
   }
+}
+
+void Client::cmdHelp(CmdRequest &request) {
+  _console.disableHandler();
+  std::string args = Utils::concat(request.args, " ");
+
+  Utils::trim(args);
+
+  if (args.empty()) {
+    std::cout << "default commands (type help <topic>):" << std::endl;
+    std::cout << std::setfill('=') << std::setw(37) << "" << std::endl;
+    std::cout << "exit\thelp\tquit\treload\nrestart\tstart\tstatus\tstop"
+              << std::endl;
+  } else if (args == "exit") {
+    cmdErrorMsg(Commands::CMD::exit, "exit");
+  } else if (args == "quit") {
+    cmdErrorMsg(Commands::CMD::quit, "quit");
+  } else if (args == "reload") {
+    cmdErrorMsg(Commands::CMD::reload, "reload");
+  } else if (args == "restart") {
+    cmdErrorMsg(Commands::CMD::restart, "restart");
+  } else if (args == "start") {
+    cmdErrorMsg(Commands::CMD::start, "start");
+  } else if (args == "stop") {
+    cmdErrorMsg(Commands::CMD::stop, "stop");
+  } else if (args == "status") {
+    cmdErrorMsg(Commands::CMD::status, "status");
+  } else if (args == "help") {
+    cmdErrorMsg(Commands::CMD::help, "help");
+  } else {
+    std::cout << "*** No help on " << args << std::endl;
+  }
+  _console.enableHandler();
 }

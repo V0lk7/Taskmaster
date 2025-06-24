@@ -168,6 +168,7 @@ void Daemon::processMessage(std::string const message) {
   std::vector<std::string> keys = Utils::split(message, " ");
   std::string answer;
 
+  std::cout << "Received message: " << message << std::endl;
   if (keys[0] == Commands::START) {
     // Program *program = nullptr;
 

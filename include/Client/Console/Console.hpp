@@ -18,11 +18,10 @@ public:
   void setReadline();
   void disableHandler();
   void enableHandler();
-  // bool registerCmd(const std::string &, CommandHandler);
-  //
+
   void readCharRead(void);
-  void cleanUp();
   void resetPrompt();
+  void clearPrompt();
 
   void setQuestionState(std::string const &, answerFunction);
   State const &getState() const;
@@ -30,11 +29,15 @@ public:
 
   void setCommandHandler(CommandHandler &handler);
 
+  void setEOFHandler(std::function<void()> handler) { _eofHandler = handler; }
+
 private:
   std::string _prompt = "";
   State _state = State::normal;
   answerFunction _ansFuction;
   CommandHandler _cmdHandler;
+  std::function<void()> _eofHandler;
+  bool _handlerEnabled = false;
 
   static std::vector<std::string> _processList;
   static const std::vector<std::string> _commands;

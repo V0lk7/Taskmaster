@@ -8,12 +8,14 @@ public:
   RequestClient();
   ~RequestClient();
 
-  int getrcvFd() const;
   bool sendMsg(std::vector<std::string> const &);
   bool receiveMsg(std::string &);
 
-  void setsockFile(std::string const &);
-  void cleanUp();
+  int getrcvFd() const;
+  void setSockFile(std::string const &);
+
+  void setAddFdToEpoll(std::function<void()> const &);
+  void setRemoveFdFromEpoll(std::function<void()> const &);
 
 private:
   enum class State { idle, connected, waitingResponse };
@@ -22,6 +24,9 @@ private:
   int _sockFd; // nanomsg socket
   int _rcvFd;  // Used to epoll on the nano socket
   State _state;
+
+  std::function<void()> _addFdToEpoll;
+  std::function<void()> _removeFdFromEpoll;
 
   static constexpr int TIMEOUT = 10; // 10ms timeout
 
