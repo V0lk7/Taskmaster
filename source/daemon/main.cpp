@@ -1,6 +1,7 @@
 #include "pch.hpp"
 
 #include "daemon/parsing/parsing.hpp"
+#include "daemon/parsing/reloadParsing.hpp"
 
 static void signalHandler(int signal);
 static bool setUpSignalHandler();
@@ -69,8 +70,9 @@ static void signalHandler(int signal) {
     daemon->sendLogs("Daemon shutting down.", "INFO");
     delete daemon;
     exit(0);
-  } else {
-    std::cout << "SIGHUP called" << std::endl;
+  } else if (signal == SIGHUP) {
+	daemon->sendLogs("Reloading configuration.", "INFO");
+	reloadConf(daemon);
   }
 }
 

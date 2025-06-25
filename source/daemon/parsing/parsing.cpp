@@ -53,7 +53,7 @@ Daemon *parsingFile(std::string config_file) {
 	std::cout << "Parsing Taskmasterd" << std::endl;
 	Log log_daemon = parsingTaskmasterd(config["taskmasterd"]);
 	std::cout << "Daemon creation" << std::endl;
-	Daemon *daemon = new Daemon(socket_path, log_daemon);
+	Daemon *daemon = new Daemon(socket_path, log_daemon, config_file);
 	daemon->sendLogs("Daemon initialized with socket path: " + socket_path, "INFO");
 	daemon->sendLogs("Parsing programs...", "INFO");
 	std::vector<Program> programs = parsingPrograms(config["programs"], daemon->getLogs());

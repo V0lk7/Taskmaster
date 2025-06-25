@@ -34,59 +34,49 @@ void Process::incrementNbRestart() { this->_nbRestart++; }
 
 int Process::getNbRestart() const { return this->_nbRestart; }
 
-void Process::start(mode_t umask_process, const std::string &workdir,
-                    const std::string &stdoutfile,
-                    const std::string &stderrfile,
-                    const std::map<std::string, std::string> &env,
-                    std::string command) {
-  this->setState(State::STARTING);
-  this->setTime();
-  int pid = fork();
-  if (pid == -1) {
-    throw std::runtime_error("Error forking process: " +
-                             std::string(strerror(errno)));
-    return;
-  } else if (pid == 0) {
-    char *completeCommand[4];
-    completeCommand[0] = const_cast<char *>("/bin/sh");
-    completeCommand[1] = const_cast<char *>("-c");
-    completeCommand[2] = const_cast<char *>(command.c_str());
-    completeCommand[3] = nullptr;
-    if (umask_process != (mode_t)-1) {
-      umask(umask_process);
-    }
-    if (env.size() > 0) {
-      for (const auto &pair : env) {
-        setenv(pair.first.c_str(), pair.second.c_str(), 1);
-      }
-    }
-    if (stdoutfile != "AUTO") {
-      dup2(open(stdoutfile.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644),
-           STDOUT_FILENO);
-    } else {
-      dup2(open("/dev/null", O_WRONLY | O_CREAT | O_APPEND, 0644),
-           STDOUT_FILENO);
-    }
-    if (stderrfile != "AUTO") {
-      dup2(open(stderrfile.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644),
-           STDERR_FILENO);
-    } else {
-      dup2(open("/dev/null", O_WRONLY | O_CREAT | O_APPEND, 0644),
-           STDERR_FILENO);
-    }
-    if (workdir != ".") {
-      if (chdir(workdir.c_str()) != 0) {
-        throw std::runtime_error("Error changing directory to " + workdir +
-                                 ": " + std::string(strerror(errno)));
-        return;
-      }
-    }
-    if (execve("/bin/sh", completeCommand, environ) == -1) {
-      throw std::runtime_error("Error executing process: " +
-                               std::string(strerror(errno)));
-    }
-  }
-  this->setPid(pid);
+void Process::start(mode_t umask_process, const std::string &workdir, const std::string &stdoutfile, const std::string &stderrfile, const std::map<std::string, std::string> &env, std::string command) {
+	this->setState(State::STARTING);
+	this->setTime();
+	int pid = fork();
+	if (pid == -1) {
+		throw std::runtime_error("Error forking process: " + std::string(strerror(errno)));
+		return ;
+	} else if (pid == 0) {
+		char *completeCommand[4];
+		completeCommand[0] = const_cast<char*>("/bin/sh");
+		completeCommand[1] = const_cast<char*>("-c");
+		completeCommand[2] = const_cast<char*>(command.c_str());
+		completeCommand[3] = nullptr;
+		if (umask_process != (mode_t)-1) {
+			umask(umask_process);
+		}
+		if (env.size() > 0) {
+			for (const auto &pair : env) {
+				setenv(pair.first.c_str(), pair.second.c_str(), 1);
+			}
+		}
+		if (stdoutfile != "AUTO") {
+			dup2(open(stdoutfile.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644), STDOUT_FILENO);
+		} else {
+			dup2(open("/dev/null", O_WRONLY | O_CREAT | O_APPEND, 0644), STDOUT_FILENO);
+		}
+		if (stderrfile != "AUTO") {
+			dup2(open(stderrfile.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644), STDERR_FILENO);
+		} else {
+			dup2(open("/dev/null", O_WRONLY | O_CREAT | O_APPEND, 0644), STDERR_FILENO);
+		}
+		if (workdir != ".") {
+			if (chdir(workdir.c_str()) != 0) {
+				throw std::runtime_error("Error changing directory to " + workdir + ": " + std::string(strerror(errno)));
+				return;
+			}
+		}
+		if (execve("/bin/sh", completeCommand, environ) == -1) {
+			throw std::runtime_error("Error executing process: " + std::string(strerror(errno)));
+		}
+	}
+	this->setPid(pid);
+	this->setInfoMsg("Process started with PID " + std::to_string(pid));
 }
 
 void Process::stop(int stopsignal) {
@@ -107,21 +97,23 @@ bool Process::diffTime(int deltaMax) {
   return (delta <= static_cast<double>(deltaMax));
 }
 
-std::string Process::convertStateToString(Process::State state) {
-  switch (state) {
-  case Process::State::STOPPED:
-    return "STOPPED";
-  case Process::State::RUNNING:
-    return "RUNNING";
-  case Process::State::STARTING:
-    return "STARTING";
-  case Process::State::STOPPING:
-    return "STOPPING";
-  case Process::State::EXITED:
-    return "EXITED";
-  default:
-    throw std::invalid_argument("Invalid state");
-  }
+std::string convertStateToString(Process::State state) {
+	switch (state) {
+		case Process::State::STOPPED:
+			return "STOPPED";
+		case Process::State::RUNNING:
+			return "RUNNING";
+		case Process::State::STARTING:
+			return "STARTING";
+		case Process::State::STOPPING:
+			return "STOPPING";
+		case Process::State::EXITED:
+			return "EXITED";
+		case Process::State::FATAL:
+			return "FATAL";
+		default:
+			throw std::invalid_argument("Invalid state");
+	}
 }
 
 void Process::setInfoMsgFormattedTime() {

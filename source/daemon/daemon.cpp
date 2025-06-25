@@ -6,7 +6,8 @@
 constexpr char Daemon::IPC[];
 constexpr char Daemon::UNIX[];
 
-Daemon::Daemon(std::string socketPath, Log logInfo) {
+Daemon::Daemon(std::string socketPath, Log logInfo, std::string confPath){
+  this->confPath = confPath;
   this->socketPath = socketPath;
   this->socketFd = -1;
   this->sockEndPoint = -1;
@@ -96,11 +97,27 @@ int Daemon::getSocketFd() const { return this->socketFd; }
 void Daemon::setSocketFd(int socketFd) { this->socketFd = socketFd; }
 std::vector<Log> Daemon::getLogs() const { return this->loggers; }
 
+void Daemon::updateLoggers(Log &log) {
+	for (auto &logger : this->loggers) {
+		if (logger.getName() == log.getName()) {
+			logger = log;
+			break;
+		}
+	}
+	for (auto &program : this->programs) {
+		for (auto &logger : program.getLogs()) {
+			if (logger.getName() == log.getName()) {
+				logger = log;
+			}
+		}
+	}
+	this->sendLogs("Logger " + log.getName() + " updated.", "INFO");
+}
+
 void Daemon::sendLogs(const std::string &message, std::string log_levelmsg) {
   if (log_levelmsg.empty()) {
     log_levelmsg = "INFO";
   }
-
   time_t now = time(nullptr);
   std::tm *ltm = std::localtime(&now);
   char time_buf[20];
@@ -142,7 +159,10 @@ void Daemon::start() {
 
 bool Daemon::listenClients() {
   int ret = nn_poll(&(this->pfd), 1, TIMEOUT);
-
+  if (ret < 0 && errno == EINTR) {
+	// interrupted by signal, we continue
+	return true;
+  }
   if (ret == -1) {
     // error case
     return false;
@@ -240,23 +260,24 @@ void Daemon::addProgram(Program &program) { this->programs.push_back(program); }
 void Daemon::removeProgram(Program &program) {
   for (auto it = this->programs.begin(); it != this->programs.end(); ++it) {
     if (it->getName() == program.getName()) {
+	  this->sendLogs("Removing program " + it->getName(), "DEBUG");
+	  it->stop("");
       this->programs.erase(it);
       break;
     }
   }
 }
 
-void Daemon::printDaemon() {
-  std::cout << "Daemon socket path: " << this->socketPath << std::endl;
-  std::cout << "Daemon socket fd: " << this->socketFd << std::endl;
-  std::cout << "Daemon processes:" << std::endl;
-  for (auto &process : this->programs) {
-    std::cout << "============================" << std::endl;
-    process.printProgram();
-  }
-}
-
 std::vector<Program> Daemon::getPrograms() { return this->programs; }
+
+Program &Daemon::getProgram(std::string name) {
+  for (auto &program : this->programs) {
+	if (program.getName() == name) {
+	  return program;
+	}
+  }
+  throw std::runtime_error("Program " + name + " not found.");
+}
 
 void Daemon::supervisePrograms() {
   if (this->programs.empty()) {
@@ -267,3 +288,5 @@ void Daemon::supervisePrograms() {
     program.superviseProcesses();
   }
 }
+
+std::string Daemon::getConfPath() const { return this->confPath; }

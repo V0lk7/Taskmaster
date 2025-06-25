@@ -2,16 +2,16 @@ unix_http_server:
   file: ./taskmaster.sock
 taskmasterd:
   logfile: ./logs/taskmasterd.log
-  loglevel: DEBUG
+  loglevel: INFO
 
 taskmasterctl:
   serverurl: ./taskmaster.sock
 
 programs:
   - name: ls #require
-    command: /bin/ls -la #require
+    command: /bin/ls -lah #require
     directory: .
-    numprocs: 3
+    numprocs: 2
     autorestart: true
     exitcodes: [0]
     stdout_logfile: ./logs/ls.log
@@ -24,6 +24,8 @@ programs:
     stdout_logfile: ./logs/echoenv.log
     stderr_logfile: ./logs/echoenv.err.log
   - name: echoenv2
-    command: /bin/echo $PATH
+    command: /bin/echo $HOME
+    autostart: true
     numprocs: 1
     stdout_logfile: ./logs/echoenv2.log
+

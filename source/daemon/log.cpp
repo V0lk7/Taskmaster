@@ -31,8 +31,19 @@ Log::~Log() {
 	}
 }
 
+bool Log::operator==(const Log &other) const {
+	return this->_name == other._name &&
+	       this->_type == other._type &&
+	       this->_level == other._level &&
+	       this->_logFile == other._logFile;
+}
+
 Log::LogLevel Log::getLogLevel() {
 	return this->_level;
+}
+
+std::string Log::getName() const {
+	return this->_name;
 }
 
 void Log::doLog(const std::string &message) {
