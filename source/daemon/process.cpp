@@ -97,7 +97,7 @@ bool Process::diffTime(int deltaMax) {
   return (delta <= static_cast<double>(deltaMax));
 }
 
-std::string convertStateToString(Process::State state) {
+std::string Process::convertStateToString(Process::State state) {
 	switch (state) {
 		case Process::State::STOPPED:
 			return "STOPPED";

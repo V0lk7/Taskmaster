@@ -312,7 +312,7 @@ void Program::superviseProcesses() {
 		pid = waitpid(process.getPid(), &status, WNOHANG);
 		if (pid == -1) {
 			// Error occurred while waiting for the process
-			this->doLog("Error waiting for process " + process.getName() + ": " + std::strerror(errno), Log::LogLevel::ERR, process.getName());
+			this->doLog("Error waiting for process " + process.getName() + ": " + strerror(errno), Log::LogLevel::ERR, process.getName());
 			continue;
 		} else if (pid == 0) {
 			// Process is still running
