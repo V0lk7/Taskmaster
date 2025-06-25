@@ -8,6 +8,8 @@
 #include "pch.hpp" // IWYU pragma: keep
 
 class Client {
+  friend class ClientTest;
+
 public:
   enum class State { idle, setup, running, waitingReply, asking, error, exit };
 
@@ -25,6 +27,7 @@ private:
   };
 
   State _state = State::idle;
+  bool _firstRun = true;
 
   Console &_console;
   Epoll _epoll;
@@ -47,6 +50,7 @@ private:
   void addCmdToQueue(std::vector<std::string> &);
 
   bool sendCmd(const std::string &, std::vector<std::string> &);
+  std::vector<std::string> processArgs(std::vector<std::string> &);
 
   bool processCmd();
   void cmdQuit(CmdRequest &);

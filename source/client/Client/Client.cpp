@@ -100,8 +100,7 @@ void Client::addCmdToQueue(std::vector<std::string> &args) {
   args.erase(args.begin());
 
   if (cmd == Commands::CMD::none) {
-    std::cout << "*** Unknown syntax: " << args[0] << std::endl;
-    std::cout << "Type 'help' for help." << std::endl;
+    cmdErrorMsg(Commands::CMD::none, args[0]);
     return;
   }
 
@@ -110,13 +109,41 @@ void Client::addCmdToQueue(std::vector<std::string> &args) {
   } else if (cmd == Commands::CMD::help) {
     _cmdQueue.push({cmd, args, ""});
   } else {
-    for (auto &arg : args) {
+    std::vector<std::string> formattedArgs = processArgs(args);
+
+    for (auto &arg : formattedArgs) {
       _cmdQueue.push({cmd, {arg}, ""});
     }
   }
 }
 
-// TODO RIGHT HERE
+std::vector<std::string> Client::processArgs(std::vector<std::string> &args) {
+  std::vector<std::string> formattedArgs;
+  std::vector<std::string> processList = _console.getProcessList();
+
+  for (const auto &arg : args) {
+    std::vector<std::string> splitArgs = Utils::split(arg, ":");
+    if (splitArgs.size() == 1) {
+      // Single program name
+      formattedArgs.push_back(splitArgs[0]);
+    } else {
+      if (splitArgs[1] == "*") {
+        // Group name with wildcard
+        for (const auto &process : processList) {
+          if (process.find(splitArgs[0] + ":") == 0) {
+            formattedArgs.push_back(process);
+          }
+        }
+      } else {
+        // Specific program in a group
+        std::string fullName = splitArgs[0] + ":" + splitArgs[1];
+        formattedArgs.push_back(fullName);
+      }
+    }
+  }
+  return formattedArgs;
+}
+
 bool Client::sendCmd(const std::string &cmd, std::vector<std::string> &args) {
   args.insert(args.begin(), cmd);
   return _request.sendMsg(args);
@@ -140,7 +167,6 @@ void Client::cmdExit(CmdRequest &request) {
 }
 
 bool Client::cmdStatus(CmdRequest &request) {
-  std::cout << "Requesting status..." << std::endl;
   _console.disableHandler();
   if (sendCmd(Commands::cmdToString(request.cmd), request.args)) {
     _state = State::waitingReply;
@@ -259,6 +285,10 @@ bool Client::run() {
           _state = State::running;
         }
       }
+    }
+    if (_firstRun) {
+      _firstRun = false;
+      _cmdQueue.push({Commands::CMD::status, {}, ""});
     }
     if (_state == State::running && !_cmdQueue.empty()) {
       if (!processCmd()) {
@@ -457,6 +487,10 @@ void Client::cmdErrorMsg(Commands::CMD const &cmd,
     break;
   case Commands::CMD::quit:
     std::cout << name << ": quit the client" << std::endl;
+    break;
+  case Commands::CMD::none:
+    std::cout << "*** Unknown syntax: " << name << "\n"
+              << "Type 'help' for help." << std::endl;
     break;
   case Commands::CMD::help:
     std::cout << name << ": help accepts an optional argument\n"

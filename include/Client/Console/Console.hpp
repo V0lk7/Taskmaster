@@ -6,6 +6,8 @@
 #include "pch.hpp" // IWYU pragma: keep
 
 class Console {
+  friend class ClientTest;
+
 public:
   enum class State { normal, question };
 
@@ -24,12 +26,14 @@ public:
   void clearPrompt();
 
   void setQuestionState(std::string const &, answerFunction);
+
   State const &getState() const;
+  std::vector<std::string> const &getProcessList() const;
   void setProcessList(std::map<std::string, std::vector<ProcessInfo>> const &);
 
   void setCommandHandler(CommandHandler &handler);
 
-  void setEOFHandler(std::function<void()> handler) { _eofHandler = handler; }
+  void setEOFHandler(std::function<void()> handler);
 
 private:
   std::string _prompt = "";

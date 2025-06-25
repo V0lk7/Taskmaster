@@ -14,7 +14,13 @@ Console &Console::Instance() {
   return _instance;
 }
 
-Console::Console() {}
+Console::Console() : _state(State::normal), _handlerEnabled(false) {
+  _processList = {};
+  _eofHandler = []() {
+    std::cout << "EOF received, exiting..." << std::endl;
+    exit(0);
+  };
+}
 
 Console::~Console() {
   rl_callback_handler_remove();
@@ -37,7 +43,12 @@ void Console::setProcessList(
   }
 }
 
+void Console::setEOFHandler(std::function<void()> function) {
+  _eofHandler = function;
+}
+
 void Console::setReadline() {
+  rl_bind_key('\t', rl_complete); // Tab completion
   rl_attempted_completion_function = &Console::completionHook;
 
   rl_callback_handler_install(">>> ", &Console::handler);
@@ -81,19 +92,18 @@ void Console::normalState(Console &instance, char *line) {
   std::vector<std::string> tokens = {};
 
   if (!line) {
-    tokens.push_back(Commands::QUIT);
-    function(tokens);
-    return;
-  }
-  std::string str(line);
+    instance._eofHandler();
+  } else {
+    std::string str(line);
 
-  Utils::trim(str);
-  if (!str.empty()) {
-    add_history(str.c_str());
+    Utils::trim(str);
+    if (!str.empty()) {
+      add_history(str.c_str());
 
-    tokens = Utils::split(str, " ");
+      tokens = Utils::split(str, " ");
 
-    function(tokens);
+      function(tokens);
+    }
   }
 }
 
@@ -232,4 +242,8 @@ char *Console::commandGenerator(const char *text, int state) {
 
 Console::State const &Console::getState() const {
   return Console::Instance()._state;
+}
+
+std::vector<std::string> const &Console::getProcessList() const {
+  return Console::_processList;
 }
