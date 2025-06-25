@@ -64,6 +64,12 @@ private:
 
   bool listenClients();
   void processMessage(std::string const);
+
+  void cmdStart(std::string, std::string &);
+  void cmdStop(std::string, std::string &);
+  void cmdReload(std::string, std::string &);
+  void cmdRestart(std::string, std::string &);
+  void cmdStatus(std::vector<std::string>, std::string &);
 };
 
 #endif

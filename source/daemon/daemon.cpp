@@ -6,7 +6,7 @@
 constexpr char Daemon::IPC[];
 constexpr char Daemon::UNIX[];
 
-Daemon::Daemon(std::string socketPath, Log logInfo, std::string confPath){
+Daemon::Daemon(std::string socketPath, Log logInfo, std::string confPath) {
   this->confPath = confPath;
   this->socketPath = socketPath;
   this->socketFd = -1;
@@ -98,20 +98,20 @@ void Daemon::setSocketFd(int socketFd) { this->socketFd = socketFd; }
 std::vector<Log> Daemon::getLogs() const { return this->loggers; }
 
 void Daemon::updateLoggers(Log &log) {
-	for (auto &logger : this->loggers) {
-		if (logger.getName() == log.getName()) {
-			logger = log;
-			break;
-		}
-	}
-	for (auto &program : this->programs) {
-		for (auto &logger : program.getLogs()) {
-			if (logger.getName() == log.getName()) {
-				logger = log;
-			}
-		}
-	}
-	this->sendLogs("Logger " + log.getName() + " updated.", "INFO");
+  for (auto &logger : this->loggers) {
+    if (logger.getName() == log.getName()) {
+      logger = log;
+      break;
+    }
+  }
+  for (auto &program : this->programs) {
+    for (auto &logger : program.getLogs()) {
+      if (logger.getName() == log.getName()) {
+        logger = log;
+      }
+    }
+  }
+  this->sendLogs("Logger " + log.getName() + " updated.", "INFO");
 }
 
 void Daemon::sendLogs(const std::string &message, std::string log_levelmsg) {
@@ -160,8 +160,8 @@ void Daemon::start() {
 bool Daemon::listenClients() {
   int ret = nn_poll(&(this->pfd), 1, TIMEOUT);
   if (ret < 0 && errno == EINTR) {
-	// interrupted by signal, we continue
-	return true;
+    // interrupted by signal, we continue
+    return true;
   }
   if (ret == -1) {
     // error case
@@ -188,34 +188,12 @@ void Daemon::processMessage(std::string const message) {
   std::vector<std::string> keys = Utils::split(message, " ");
   std::string answer;
 
-  std::cout << "Received message: " << message << std::endl;
   if (keys[0] == Commands::START) {
-    // Program *program = nullptr;
-
-    // for (auto &item : this->programs) {
-    //   if (item.getName() == keys[1]) {
-    //     program = &item;
-    //     break;
-    //   }
-    // }
-    // keys.erase(keys.begin());
-    // std::string processName = keys[0];
-    // if (keys.size() > 1) {
-    //   processName = keys[1];
-    // }
-    // program->start(processName, answer);
-    std::cout << "Command \"START\" received for program: " << keys[1]
-              << std::endl;
+    cmdStart(keys[1], answer);
   } else if (keys[0] == Commands::STOP) {
-    std::cout << "Command \"STOP\" received" << std::endl;
-    answer = "OK";
+    cmdStop(keys[1], answer);
   } else if (keys[0] == Commands::STATUS) {
-    for (auto &program : this->programs) {
-      std::vector<std::string> status = program.getStatusProcesses();
-
-      answer += Utils::concat(status, "\n");
-      answer += "\n";
-    }
+    cmdStatus(keys, answer);
   } else if (keys[0] == Commands::RELOAD) {
     std::cout << "Command \"RELOAD\" received" << std::endl;
     answer = "OK";
@@ -224,8 +202,94 @@ void Daemon::processMessage(std::string const message) {
     answer = "KO";
   }
   if (nn_send(this->socketFd, answer.c_str(), answer.size(), 0) < 1) {
-    std::cout << "Et merde" << std::endl;
+    std::cerr << "Error sending answer: " << nn_strerror(nn_errno())
+              << std::endl;
   }
+}
+
+void Daemon::cmdStart(std::string name, std::string &answer) {
+  std::vector<std::string> tokens = Utils::split(name, ":");
+  std::string programName = tokens[0];
+  std::string processName = (tokens.size() > 1) ? tokens[1] : "";
+
+  try {
+    Program &program = this->getProgram(programName);
+    Process *process = nullptr;
+    processName = (!processName.empty()) ? processName : programName;
+    try {
+      process = &program.getProcess(processName);
+    } catch (const std::runtime_error &e) {
+      std::cerr << "Error: " << e.what() << std::endl; // TODO: delete this line
+      answer = processName + ": ERROR (no such process)";
+      return;
+    }
+    if (process->getState() == Process::State::RUNNING ||
+        process->getState() == Process::State::STARTING) {
+      answer = processName + ": ERROR (process already started)";
+      return;
+    } else if (process->getState() == Process::State::BACKOFF) {
+      answer = processName + ": ERROR (spawn error)";
+      return;
+    }
+    try {
+      program.start(processName);
+      int pid = process->getPid();
+      int status;
+      sleep(program.getStartdelay());
+
+      pid = waitpid(pid, &status, WNOHANG);
+      switch (pid) {
+      case -1:
+        std::cout << "Case -1" << std::endl;
+        throw std::runtime_error("Error waiting for process: " +
+                                 std::string(strerror(errno)));
+      case 0:
+        std::cout << "Case 0" << std::endl;
+        answer = processName + ": started";
+        return;
+      default:
+        std::cout << "Case default"
+                  << std::endl; // TODO: bug il passe tout le temps ici, voir
+                                // avec Val (ls)
+        answer = processName + ": ERROR (spawn error)";
+        return;
+      }
+    } catch (const std::runtime_error &e) {
+      answer = processName + ": ERROR (spawn error)";
+      return;
+    }
+  } catch (const std::runtime_error &e) {
+    std::cerr << "Error: " << e.what() << std::endl; // TODO: delete this line
+    answer = processName + ": ERROR (no such process)";
+    return;
+  }
+}
+
+void Daemon::cmdStop(std::string name, std::string &answer) {
+  std::cout << "Command \"STOP\" received for program: " << name << std::endl;
+  answer = "OK";
+}
+
+void Daemon::cmdStatus(std::vector<std::string> keys, std::string &answer) {
+  (void)keys; // Unused variable, but kept for future use
+  for (auto &program : this->programs) {
+    std::vector<std::string> status = program.getStatusProcesses();
+
+    answer += Utils::concat(status, "\n");
+    answer += "\n";
+  }
+  answer.back() = '\0'; // Remove the last newline character
+}
+
+void Daemon::cmdReload(std::string name, std::string &answer) {
+  std::cout << "Command \"RELOAD\" received for program: " << name << std::endl;
+  answer = "OK";
+}
+
+void Daemon::cmdRestart(std::string name, std::string &answer) {
+  std::cout << "Command \"RESTART\" received for program: " << name
+            << std::endl;
+  answer = "OK";
 }
 
 std::string Daemon::stringStatusProgram(std::string name) {
@@ -260,8 +324,8 @@ void Daemon::addProgram(Program &program) { this->programs.push_back(program); }
 void Daemon::removeProgram(Program &program) {
   for (auto it = this->programs.begin(); it != this->programs.end(); ++it) {
     if (it->getName() == program.getName()) {
-	  this->sendLogs("Removing program " + it->getName(), "DEBUG");
-	  it->stop("");
+      this->sendLogs("Removing program " + it->getName(), "DEBUG");
+      it->stop("");
       this->programs.erase(it);
       break;
     }
@@ -272,9 +336,9 @@ std::vector<Program> Daemon::getPrograms() { return this->programs; }
 
 Program &Daemon::getProgram(std::string name) {
   for (auto &program : this->programs) {
-	if (program.getName() == name) {
-	  return program;
-	}
+    if (program.getName() == name) {
+      return program;
+    }
   }
   throw std::runtime_error("Program " + name + " not found.");
 }

@@ -123,13 +123,16 @@ std::vector<std::string> Client::processArgs(std::vector<std::string> &args) {
 
   for (const auto &arg : args) {
     std::vector<std::string> splitArgs = Utils::split(arg, ":");
-    if (splitArgs.size() == 1) {
+    if (splitArgs.size() == 1 && splitArgs[0] != "*") {
       // Single program name
       formattedArgs.push_back(splitArgs[0]);
     } else {
       if (splitArgs[1] == "*") {
         // Group name with wildcard
         for (const auto &process : processList) {
+          if (process == splitArgs[0] + ":*") {
+            continue; // Skip wildcard itself
+          }
           if (process.find(splitArgs[0] + ":") == 0) {
             formattedArgs.push_back(process);
           }
@@ -273,7 +276,7 @@ bool Client::run() {
       if (fd == STDIN_FILENO && _state != State::waitingReply) {
         _console.readCharRead();
       } else {
-        if (_state == State::waitingReply) {
+        if (_state == State::waitingReply && events[i].events & EPOLLIN) {
           std::string answer;
 
           if (!_request.receiveMsg(answer)) {
