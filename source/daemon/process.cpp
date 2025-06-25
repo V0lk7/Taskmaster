@@ -98,6 +98,7 @@ void Process::start(mode_t umask_process, const std::string &workdir, const std:
 		}
 	}
 	this->setPid(pid);
+	this->setInfoMsg("Process started with PID " + std::to_string(pid));
 }
 
 void Process::stop(int stopsignal) {
@@ -129,6 +130,8 @@ std::string convertStateToString(Process::State state) {
 			return "STOPPING";
 		case Process::State::EXITED:
 			return "EXITED";
+		case Process::State::FATAL:
+			return "FATAL";
 		default:
 			throw std::invalid_argument("Invalid state");
 	}

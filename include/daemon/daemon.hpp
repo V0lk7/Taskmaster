@@ -35,12 +35,12 @@ public:
 
   void sendLogs(const std::string &message, std::string log_levelmsg);
   std::vector<Log> getLogs() const;
-  void printDaemon();
   std::string stringStatusProgram(std::string name);
   std::string stringStatusAllPrograms();
   std::vector<Program> getPrograms();
   Program &getProgram(std::string name);
   std::string getConfPath() const;
+  void updateLoggers(Log &log);
 
   void supervisePrograms();
 

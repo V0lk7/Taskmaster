@@ -205,7 +205,6 @@ void Program::start(std::string name_process) {
             if (process.getState() == Process::State::STOPPED || process.getState() == Process::State::EXITED) {
                 this->doLog("Starting process", Log::LogLevel::INFO, process.getName());
                 process.start(this->_umask, this->_workdir, this->_stdoutfile, this->_stderrfile, this->_env, this->_command);
-                std::cout << "Process " << process.getName() << " started with PID " << process.getPid() << std::endl;
             } else {
                 this->doLog("Process is already running or starting", Log::LogLevel::WARNING, process.getName());
             }
@@ -315,6 +314,9 @@ void Program::superviseProcesses() {
 	for (auto &process : this->_processes) {
 		unexpected_exit = false;
 		if (process.getPid() == -1) {
+			if (process.getState() == Process::State::STOPPED && this->_autostart && process.getInfoMsg() == "Not started") {
+				process.start(this->_umask, this->_workdir, this->_stdoutfile, this->_stderrfile, this->_env, this->_command);
+			}
 			continue;
 		}
 		pid = waitpid(process.getPid(), &status, WNOHANG);
@@ -357,6 +359,9 @@ void Program::superviseProcesses() {
 				} else {
 					this->doLog("Process " + process.getName() + " exceeded restart retry limit", Log::LogLevel::ERR, process.getName());
 					process.setPid(-1);
+					if (process.getInfoMsg() == "Not started") {
+						process.setInfoMsg("Exited, exceeded restart retry limit");
+					}
 					process.setState(Process::State::FATAL);
 				}
 			} else {
