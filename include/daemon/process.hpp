@@ -32,6 +32,8 @@ public:
   void incrementNbRestart();
   int getNbRestart() const;
 
+  std::string formatUptime() const;
+
   void start(mode_t umask_process, const std::string &workdir,
              const std::string &stdoutfile, const std::string &stderrfile,
              const std::map<std::string, std::string> &env,

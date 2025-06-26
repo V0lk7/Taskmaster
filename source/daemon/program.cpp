@@ -292,15 +292,43 @@ void Program::printProgram() {
   }
 }
 
-std::vector<std::string> Program::getStatusProcesses() const {
+std::vector<std::string>
+Program::getStatusProcesses(std::string const processName) {
   std::vector<std::string> programStatus;
-  for (const auto &process : _processes) {
-    std::string programName = _name;
-    std::string processName = process.getName();
-    std::string status = Process::convertStateToString(process.getState());
 
-    programStatus.push_back(programName + ";" + processName + ";" + status +
-                            ";" + process.getInfoMsg());
+  if (processName.empty()) {
+    for (const auto &proc : this->_processes) {
+      std::string programName = _name;
+      std::string processName = proc.getName();
+      std::string status = Process::convertStateToString(proc.getState());
+      std::string infoMsg;
+
+      if (proc.getState() == Process::State::RUNNING) {
+        std::ostringstream oss;
+        oss << "pid " << proc.getPid() << ", " << proc.formatUptime();
+        infoMsg = oss.str();
+      } else {
+        infoMsg = proc.getInfoMsg();
+      }
+
+      programStatus.push_back(programName + ";" + processName + ";" + status +
+                              ";" + infoMsg);
+    }
+  } else {
+    Process process = this->getProcess(processName);
+    std::string infoMsg;
+
+    if (process.getState() == Process::State::RUNNING) {
+      std::ostringstream oss;
+      oss << "pid " << process.getPid() << ", " << process.formatUptime();
+      infoMsg = oss.str();
+    } else {
+      infoMsg = process.getInfoMsg();
+    }
+
+    programStatus.push_back(_name + ";" + process.getName() + ";" +
+                            Process::convertStateToString(process.getState()) +
+                            ";" + infoMsg);
   }
   return programStatus;
 }
@@ -397,7 +425,6 @@ void Program::handleExitProcess(Process &process, int status) {
         process.setInfoMsg("Exited, exceeded restart retry limit");
       }
       process.setState(Process::State::FATAL);
-      std::cout << "aled" << std::endl; // TODO: delete this line
     }
   } else {
     process.setState(Process::State::EXITED);

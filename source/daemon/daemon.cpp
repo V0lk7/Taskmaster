@@ -186,14 +186,15 @@ bool Daemon::listenClients() {
 
 void Daemon::processMessage(std::string const message) {
   std::vector<std::string> keys = Utils::split(message, " ");
+  std::string param = keys.size() > 1 ? keys[1] : "";
   std::string answer;
 
   if (keys[0] == Commands::START) {
-    cmdStart(keys[1], answer);
+    cmdStart(param, answer);
   } else if (keys[0] == Commands::STOP) {
-    cmdStop(keys[1], answer);
+    cmdStop(param, answer);
   } else if (keys[0] == Commands::STATUS) {
-    cmdStatus(keys, answer);
+    cmdStatus(param, answer);
   } else if (keys[0] == Commands::RELOAD) {
     std::cout << "Command \"RELOAD\" received" << std::endl;
     answer = "OK";
@@ -210,29 +211,23 @@ void Daemon::processMessage(std::string const message) {
 void Daemon::cmdStart(std::string name, std::string &answer) {
   std::vector<std::string> tokens = Utils::split(name, ":");
   std::string programName = tokens[0];
-  std::string processName = (tokens.size() > 1) ? tokens[1] : "";
+  std::string processName = (tokens.size() > 1) ? tokens[1] : programName;
 
   try {
     Program &program = this->getProgram(programName);
-    Process *process = nullptr;
-    processName = (!processName.empty()) ? processName : programName;
-    try {
-      process = &program.getProcess(processName);
-    } catch (const std::runtime_error &e) {
-      answer = processName + ": ERROR (no such process)";
-      return;
-    }
-    if (process->getState() == Process::State::RUNNING ||
-        process->getState() == Process::State::STARTING) {
+    Process &process = program.getProcess(processName);
+
+    if (process.getState() == Process::State::RUNNING ||
+        process.getState() == Process::State::STARTING) {
       answer = processName + ": ERROR (process already started)";
       return;
-    } else if (process->getState() == Process::State::BACKOFF) {
+    } else if (process.getState() == Process::State::BACKOFF) {
       answer = processName + ": ERROR (spawn error)";
       return;
     }
     try {
       program.start(processName);
-      int pid = process->getPid();
+      int pid = process.getPid();
       int status;
       sleep(program.getStartdelay());
 
@@ -242,15 +237,15 @@ void Daemon::cmdStart(std::string name, std::string &answer) {
         throw std::runtime_error("Error waiting for process: " +
                                  std::string(strerror(errno)));
       case 0:
-        process->setState(Process::State::RUNNING);
-        process->setTime();
+        process.setState(Process::State::RUNNING);
+        process.setTime();
         answer = processName + ": started";
-        std::cout << Process::convertStateToString(process->getState())
+        std::cout << Process::convertStateToString(process.getState())
                   << std::endl;
         return;
       default:
         answer = processName + ": ERROR (spawn error)";
-        program.handleExitProcess(*process, status);
+        program.handleExitProcess(process, status);
         return;
       }
     } catch (const std::runtime_error &e) {
@@ -269,15 +264,30 @@ void Daemon::cmdStop(std::string name, std::string &answer) {
   answer = "OK";
 }
 
-void Daemon::cmdStatus(std::vector<std::string> keys, std::string &answer) {
-  (void)keys; // Unused variable, but kept for future use
-  for (auto &program : this->programs) {
-    std::vector<std::string> status = program.getStatusProcesses();
+void Daemon::cmdStatus(std::string name, std::string &answer) {
+  answer = "OK\n";
+  if (name.empty()) {
+    for (auto &program : this->programs) {
+      std::vector<std::string> status = program.getStatusProcesses();
 
-    answer += Utils::concat(status, "\n");
-    answer += "\n";
+      answer += Utils::concat(status, "\n");
+      answer += "\n";
+    }
+    answer.back() = '\0'; // Remove the last newline character
+  } else {
+    std::vector<std::string> tokens = Utils::split(name, ":");
+    std::string programName = tokens[0];
+    std::string processName = (tokens.size() > 1) ? tokens[1] : tokens[0];
+
+    try {
+      Program &program = this->getProgram(programName);
+
+      answer += program.getStatusProcesses(processName)[0];
+    } catch (const std::runtime_error &e) {
+      answer = "error\n";
+      answer += processName + ": ERROR (no such process)";
+    }
   }
-  answer.back() = '\0'; // Remove the last newline character
 }
 
 void Daemon::cmdReload(std::string name, std::string &answer) {

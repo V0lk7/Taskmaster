@@ -367,6 +367,12 @@ void Client::cmdStatusAnswer(std::string const &answer) {
   std::vector<std::string> processList = Utils::split(answer, "\n");
   std::map<std::string, std::vector<ProcessInfo>> processMap;
 
+  if (processList[0] == "error") {
+    std::cout << processList[1] << std::endl;
+    return;
+  }
+  processList.erase(processList.begin()); // Remove the first line (header)
+
   for (std::string &process : processList) {
     std::vector<std::string> processInfo = Utils::split(process, ";");
     auto it = processMap.find(processInfo[0]);
@@ -379,7 +385,10 @@ void Client::cmdStatusAnswer(std::string const &answer) {
     }
   }
   displayProcessList(processMap);
-  _console.setProcessList(processMap);
+  if (_currentCmdRequest.args.size() ==
+      1) { // > 1 means multiple args (except command)
+    _console.setProcessList(processMap);
+  }
 }
 
 void Client::displayProcessList(
@@ -395,7 +404,7 @@ void Client::displayProcessList(
                 << std::left << pair.second[0].message << std::endl;
     } else {
       for (const ProcessInfo &process : processes) {
-        const std::string name = programName + ":" + pair.second[0].name;
+        const std::string name = programName + ":" + process.name;
         std::cout << std::left << std::setw(33) << name << std::left
                   << std::setw(10) << process.status << std::left
                   << process.message << std::endl;

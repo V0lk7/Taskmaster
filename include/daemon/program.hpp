@@ -54,7 +54,7 @@ public:
   void stop(std::string name_process);
   void printProgram();
 
-  std::vector<std::string> getStatusProcesses() const;
+  std::vector<std::string> getStatusProcesses(std::string const proc = "");
   Process &getProcess(std::string name);
   void superviseProcesses();
 

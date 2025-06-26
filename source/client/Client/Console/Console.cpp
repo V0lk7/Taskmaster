@@ -33,11 +33,11 @@ void Console::setProcessList(
   _processList.clear();
   for (const auto &pair : newProcessList) {
     if (pair.second.size() == 1) {
-      Console::_processList.push_back(pair.first);
+      _processList.push_back(pair.first);
     } else {
       _processList.push_back(pair.first + ":*");
       for (const auto &process : pair.second) {
-        Console::_processList.push_back(pair.first + ":" + process.name);
+        _processList.push_back(pair.first + ":" + process.name);
       }
     }
   }

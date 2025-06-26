@@ -61,7 +61,7 @@ programs:
 
   - name: ls
     command: ls -la
-    autostart: false
+    autostart: true
     autorestart: true
     numprocs: 1
     starttime: 5

@@ -69,7 +69,7 @@ private:
   void cmdStop(std::string, std::string &);
   void cmdReload(std::string, std::string &);
   void cmdRestart(std::string, std::string &);
-  void cmdStatus(std::vector<std::string>, std::string &);
+  void cmdStatus(std::string, std::string &);
 };
 
 #endif
