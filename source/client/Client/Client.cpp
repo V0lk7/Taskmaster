@@ -163,7 +163,6 @@ void Client::cmdQuit(CmdRequest &request) {
 void Client::cmdExit(CmdRequest &request) {
   (void)request; // Unused parameter
   _console.disableHandler();
-  _console.clearPrompt();
   _state = State::exit;
   std::cout << "Exiting client..." << std::endl;
   exit(0);
@@ -171,6 +170,7 @@ void Client::cmdExit(CmdRequest &request) {
 
 bool Client::cmdStatus(CmdRequest &request) {
   _console.disableHandler();
+  _console.clearPrompt();
   if (sendCmd(Commands::cmdToString(request.cmd), request.args)) {
     _state = State::waitingReply;
     return true;
@@ -181,6 +181,7 @@ bool Client::cmdStatus(CmdRequest &request) {
 
 bool Client::cmdStart(CmdRequest &request) {
   _console.disableHandler();
+  _console.clearPrompt();
   if (request.args.size() <= 0) {
     cmdErrorMsg(Commands::CMD::start);
     _console.enableHandler();
@@ -196,6 +197,7 @@ bool Client::cmdStart(CmdRequest &request) {
 
 bool Client::cmdStop(CmdRequest &request) {
   _console.disableHandler();
+  _console.clearPrompt();
   if (request.args.size() <= 0) {
     cmdErrorMsg(Commands::CMD::stop);
     _console.enableHandler();
@@ -211,6 +213,7 @@ bool Client::cmdStop(CmdRequest &request) {
 
 bool Client::cmdRestart(CmdRequest &request) {
   _console.disableHandler();
+  _console.clearPrompt();
   if (request.args.size() <= 0) {
     cmdErrorMsg(Commands::CMD::restart);
     _console.enableHandler();
@@ -227,6 +230,7 @@ bool Client::cmdRestart(CmdRequest &request) {
 bool Client::cmdReload(CmdRequest &request) {
   if (request.args.size() != 0) {
     _console.disableHandler();
+    _console.clearPrompt();
     cmdErrorMsg(Commands::CMD::reload);
     _console.enableHandler();
     return false;
@@ -354,7 +358,9 @@ void Client::processReply(const Commands::CMD &cmd, const std::string &reply) {
     logError("processReply() - Unknown command received: " + reply);
     break;
   }
-  _console.enableHandler();
+  if (_cmdQueue.empty()) {
+    _console.enableHandler();
+  }
 }
 
 void Client::cmdStatusAnswer(std::string const &answer) {

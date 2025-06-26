@@ -114,8 +114,8 @@ void Console::resetPrompt() {
 }
 
 void Console::clearPrompt() {
-  rl_replace_line("", 0);
-  rl_crlf();
+  std::cout << "\r\33[2K"; // Carriage return + clear line
+  std::cout.flush();
 }
 
 void Console::questionState(Console &instance, char *line) {
