@@ -11,39 +11,39 @@ public:
   Program(const std::string &name, const std::string &command);
   ~Program();
 
-		bool operator==(const Program& other) const;
+  bool operator==(const Program &other) const;
 
-		void setName(const std::string &name);
-		std::string getName() const;
-		std::string getCommand() const;
-		void setWorkdir(const std::string &workdir);
-		std::string getWorkdir() const;
-		void setNbprocess(int nbprocess);
-		int getNbprocess() const;
-		void setAutostart(bool autostart);
-		bool getAutostart() const;
-		void setRestart(Restart restart);
-		Restart getRestart() const;
-		void setExitcodes(std::vector<int> exitcodes);
-		std::vector<int> getExitcodes() const;
-		void setStartdelay(int startdelay);
-		int getStartdelay() const;
-		void setRestartretry(int restartretry);
-		int getRestartretry() const;
-		void setStopsignal(int stopsignal);
-		void setStopsignalString(const std::string &stopsignal);
-		int getStopsignal() const;
-		void setStoptimeout(int stoptimeout);
-		int getStoptimeout() const;
-		void setStdoutfile(const std::string &stdoutfile);
-		void setStderrfile(const std::string &stderrfile);
-		std::map<std::string, std::string> getEnv() const;
-		void addEnv(const std::string &key, const std::string &value);
-		void setUmask(mode_t umask);
-		mode_t getUmask() const;
-		void addLog(const Log &log);
-		std::string getStates();
-		std::vector<Log> getLogs() const;
+  void setName(const std::string &name);
+  std::string getName() const;
+  std::string getCommand() const;
+  void setWorkdir(const std::string &workdir);
+  std::string getWorkdir() const;
+  void setNbprocess(int nbprocess);
+  int getNbprocess() const;
+  void setAutostart(bool autostart);
+  bool getAutostart() const;
+  void setRestart(Restart restart);
+  Restart getRestart() const;
+  void setExitcodes(std::vector<int> exitcodes);
+  std::vector<int> getExitcodes() const;
+  void setStartdelay(int startdelay);
+  int getStartdelay() const;
+  void setRestartretry(int restartretry);
+  int getRestartretry() const;
+  void setStopsignal(int stopsignal);
+  void setStopsignalString(const std::string &stopsignal);
+  int getStopsignal() const;
+  void setStoptimeout(int stoptimeout);
+  int getStoptimeout() const;
+  void setStdoutfile(const std::string &stdoutfile);
+  void setStderrfile(const std::string &stderrfile);
+  std::map<std::string, std::string> getEnv() const;
+  void addEnv(const std::string &key, const std::string &value);
+  void setUmask(mode_t umask);
+  mode_t getUmask() const;
+  void addLog(const Log &log);
+  std::string getStates();
+  std::vector<Log> getLogs() const;
 
   void doLog(const std::string &message, Log::LogLevel level,
              std::string name_process);
@@ -57,6 +57,8 @@ public:
   std::vector<std::string> getStatusProcesses() const;
   Process &getProcess(std::string name);
   void superviseProcesses();
+
+  void handleExitProcess(Process &, int);
 
 private:
   std::string _name;

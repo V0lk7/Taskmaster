@@ -219,7 +219,6 @@ void Daemon::cmdStart(std::string name, std::string &answer) {
     try {
       process = &program.getProcess(processName);
     } catch (const std::runtime_error &e) {
-      std::cerr << "Error: " << e.what() << std::endl; // TODO: delete this line
       answer = processName + ": ERROR (no such process)";
       return;
     }
@@ -240,26 +239,26 @@ void Daemon::cmdStart(std::string name, std::string &answer) {
       pid = waitpid(pid, &status, WNOHANG);
       switch (pid) {
       case -1:
-        std::cout << "Case -1" << std::endl;
         throw std::runtime_error("Error waiting for process: " +
                                  std::string(strerror(errno)));
       case 0:
-        std::cout << "Case 0" << std::endl;
+        process->setState(Process::State::RUNNING);
+        process->setTime();
         answer = processName + ": started";
+        std::cout << Process::convertStateToString(process->getState())
+                  << std::endl;
         return;
       default:
-        std::cout << "Case default"
-                  << std::endl; // TODO: bug il passe tout le temps ici, voir
-                                // avec Val (ls)
         answer = processName + ": ERROR (spawn error)";
+        program.handleExitProcess(*process, status);
         return;
       }
     } catch (const std::runtime_error &e) {
       answer = processName + ": ERROR (spawn error)";
+      program.doLog(e.what(), Log::LogLevel::ERR, processName);
       return;
     }
   } catch (const std::runtime_error &e) {
-    std::cerr << "Error: " << e.what() << std::endl; // TODO: delete this line
     answer = processName + ": ERROR (no such process)";
     return;
   }
