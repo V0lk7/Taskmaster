@@ -29,6 +29,7 @@ public:
 
   State const &getState() const;
   std::vector<std::string> const &getProcessList() const;
+  std::map<std::string, std::vector<ProcessInfo>> const &getProcessMap() const;
   void setProcessList(std::map<std::string, std::vector<ProcessInfo>> const &);
 
   void setCommandHandler(CommandHandler &handler);
@@ -44,6 +45,7 @@ private:
   bool _handlerEnabled = false;
 
   static std::vector<std::string> _processList;
+  static std::map<std::string, std::vector<ProcessInfo>> _processMap;
   static const std::vector<std::string> _commands;
 
   static void handler(char *);

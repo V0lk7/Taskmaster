@@ -3,6 +3,7 @@
 #include "common/Utils.hpp"
 
 std::vector<std::string> Console::_processList = {};
+std::map<std::string, std::vector<ProcessInfo>> Console::_processMap = {};
 
 const std::vector<std::string> Console::_commands = {
     Commands::RELOAD, Commands::QUIT,    Commands::STATUS, Commands::START,
@@ -31,6 +32,7 @@ Console::~Console() {
 void Console::setProcessList(
     std::map<std::string, std::vector<ProcessInfo>> const &newProcessList) {
   _processList.clear();
+  _processMap = newProcessList;
   for (const auto &pair : newProcessList) {
     if (pair.second.size() == 1) {
       _processList.push_back(pair.first);
@@ -41,6 +43,11 @@ void Console::setProcessList(
       }
     }
   }
+}
+
+std::map<std::string, std::vector<ProcessInfo>> const &
+Console::getProcessMap() const {
+  return Console::_processMap;
 }
 
 void Console::setEOFHandler(std::function<void()> function) {

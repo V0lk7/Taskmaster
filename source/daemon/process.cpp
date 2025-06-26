@@ -2,6 +2,7 @@
 
 Process::Process(std::string name) : _name(name) {
   this->_state = State::STOPPED;
+  this->_manuallyStopped = false;
   this->_pid = -1;
   this->_time = 0;
   this->_infoMsg = "Not started";
@@ -57,6 +58,7 @@ void Process::start(mode_t umask_process, const std::string &workdir,
                     std::string command) {
   this->setState(State::STARTING);
   this->setTime();
+  this->_manuallyStopped = false;
   int pid = fork();
   if (pid == -1) {
     throw std::runtime_error("Error forking process: " +
@@ -169,3 +171,9 @@ void Process::setInfoMsgFormattedTime() {
 
   this->_infoMsg = oss.str();
 }
+
+void Process::setManuallyStopped(bool manuallyStopped) {
+  this->_manuallyStopped = manuallyStopped;
+}
+
+bool Process::isManuallyStopped() const { return this->_manuallyStopped; }

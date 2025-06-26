@@ -403,8 +403,9 @@ void Program::handleExitProcess(Process &process, int status) {
   }
 
   bool should_restart =
-      (this->_restart == Restart::TRUE) ||
-      (this->_restart == Restart::UNEXPECTED && unexpected_exit);
+      ((this->_restart == Restart::TRUE) ||
+       (this->_restart == Restart::UNEXPECTED && unexpected_exit)) &&
+      process.isManuallyStopped() == false;
 
   if (should_restart) {
     if (process.getNbRestart() < this->_restartretry) {

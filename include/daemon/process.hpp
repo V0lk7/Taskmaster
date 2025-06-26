@@ -42,6 +42,9 @@ public:
 
   void setInfoMsgFormattedTime();
 
+  void setManuallyStopped(bool manuallyStopped);
+  bool isManuallyStopped() const;
+
 private:
   std::string _name;
   State _state;
@@ -49,6 +52,7 @@ private:
   time_t _time;
   std::string _infoMsg;
   int _nbRestart;
+  bool _manuallyStopped;
 };
 
 #endif

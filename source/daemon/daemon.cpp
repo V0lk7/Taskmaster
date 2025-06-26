@@ -216,13 +216,16 @@ void Daemon::cmdStart(std::string name, std::string &answer) {
   try {
     Program &program = this->getProgram(programName);
     Process &process = program.getProcess(processName);
+    std::string name = programName == processName
+                           ? programName
+                           : programName + ":" + processName;
 
     if (process.getState() == Process::State::RUNNING ||
         process.getState() == Process::State::STARTING) {
-      answer = processName + ": ERROR (process already started)";
+      answer = name + ": ERROR (process already started)";
       return;
     } else if (process.getState() == Process::State::BACKOFF) {
-      answer = processName + ": ERROR (spawn error)";
+      answer = name + ": ERROR (spawn error)";
       return;
     }
     try {
@@ -239,29 +242,47 @@ void Daemon::cmdStart(std::string name, std::string &answer) {
       case 0:
         process.setState(Process::State::RUNNING);
         process.setTime();
-        answer = processName + ": started";
-        std::cout << Process::convertStateToString(process.getState())
-                  << std::endl;
+        answer = name + ": started";
         return;
       default:
-        answer = processName + ": ERROR (spawn error)";
+        answer = name + ": ERROR (spawn error)";
         program.handleExitProcess(process, status);
         return;
       }
     } catch (const std::runtime_error &e) {
-      answer = processName + ": ERROR (spawn error)";
+      answer = name + ": ERROR (spawn error)";
       program.doLog(e.what(), Log::LogLevel::ERR, processName);
       return;
     }
   } catch (const std::runtime_error &e) {
-    answer = processName + ": ERROR (no such process)";
+    answer = name + ": ERROR (no such process)";
     return;
   }
 }
 
 void Daemon::cmdStop(std::string name, std::string &answer) {
-  std::cout << "Command \"STOP\" received for program: " << name << std::endl;
-  answer = "OK";
+  std::vector<std::string> tokens = Utils::split(name, ":");
+  std::string programName = tokens[0];
+  std::string processName = (tokens.size() > 1) ? tokens[1] : programName;
+
+  try {
+    Program &program = this->getProgram(programName);
+    Process &process = program.getProcess(processName);
+    std::string name = programName == processName
+                           ? programName
+                           : programName + ":" + processName;
+
+    if (process.getState() != Process::State::RUNNING) {
+      answer = name + ": ERROR (not running)";
+      return;
+    }
+    program.stop(processName);
+    process.setManuallyStopped(true);
+    answer = name + ": stopped";
+  } catch (const std::runtime_error &e) {
+    answer = processName + ": ERROR (no such process)";
+    return;
+  }
 }
 
 void Daemon::cmdStatus(std::string name, std::string &answer) {

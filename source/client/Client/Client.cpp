@@ -119,7 +119,8 @@ void Client::addCmdToQueue(std::vector<std::string> &args) {
 
 std::vector<std::string> Client::processArgs(std::vector<std::string> &args) {
   std::vector<std::string> formattedArgs;
-  std::vector<std::string> processList = _console.getProcessList();
+  std::map<std::string, std::vector<ProcessInfo>> processMap =
+      _console.getProcessMap();
 
   for (const auto &arg : args) {
     std::vector<std::string> splitArgs = Utils::split(arg, ":");
@@ -129,13 +130,17 @@ std::vector<std::string> Client::processArgs(std::vector<std::string> &args) {
     } else {
       if (splitArgs[1] == "*") {
         // Group name with wildcard
-        for (const auto &process : processList) {
-          if (process == splitArgs[0] + ":*") {
-            continue; // Skip wildcard itself
+        for (const auto &pair : processMap) {
+          if (pair.first == splitArgs[0]) {
+            for (const auto &process : pair.second) {
+              formattedArgs.push_back(pair.first + ":" + process.name);
+              std::cout << "Adding process: " << pair.first + ":" + process.name
+                        << std::endl;
+            }
           }
-          if (process.find(splitArgs[0] + ":") == 0) {
-            formattedArgs.push_back(process);
-          }
+        }
+        if (formattedArgs.empty()) {
+          formattedArgs.push_back(splitArgs[0]);
         }
       } else {
         // Specific program in a group
@@ -143,6 +148,37 @@ std::vector<std::string> Client::processArgs(std::vector<std::string> &args) {
         formattedArgs.push_back(fullName);
       }
     }
+  }
+
+  // std::vector<std::string> processList = _console.getProcessList();
+
+  // for (const auto &arg : args) {
+  //   std::vector<std::string> splitArgs = Utils::split(arg, ":");
+  //   if (splitArgs.size() == 1 && splitArgs[0] != "*") {
+  //     // Single program name
+  //     formattedArgs.push_back(splitArgs[0]);
+  //   } else {
+  //     if (splitArgs[1] == "*") {
+  //       // Group name with wildcard
+  //       for (const auto &process : processList) {
+  //         if (process == splitArgs[0] + ":*") {
+  //           continue; // Skip wildcard itself
+  //         } else if (process.find(splitArgs[0] + ":") == 0) {
+  //           formattedArgs.push_back(process);
+  //         }
+  //       }
+  //       if (formattedArgs.empty()) {
+  //         formattedArgs.push_back(splitArgs[0]);
+  //       }
+  //     } else {
+  //       // Specific program in a group
+  //       std::string fullName = splitArgs[0] + ":" + splitArgs[1];
+  //       formattedArgs.push_back(fullName);
+  //     }
+  //   }
+  // }
+  for (auto &arg : formattedArgs) {
+    std::cout << "Adding argument: " << arg << std::endl;
   }
   return formattedArgs;
 }
