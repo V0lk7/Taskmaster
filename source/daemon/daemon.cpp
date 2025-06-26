@@ -225,6 +225,7 @@ void Daemon::cmdStart(std::string name, std::string &answer) {
       answer = name + ": ERROR (process already started)";
       return;
     } else if (process.getState() == Process::State::BACKOFF) {
+      std::cout << "Fuck - 1" << std::endl;
       answer = name + ": ERROR (spawn error)";
       return;
     }
@@ -245,11 +246,13 @@ void Daemon::cmdStart(std::string name, std::string &answer) {
         answer = name + ": started";
         return;
       default:
+        std::cout << "Fuck - 2" << std::endl;
         answer = name + ": ERROR (spawn error)";
         program.handleExitProcess(process, status);
         return;
       }
     } catch (const std::runtime_error &e) {
+      std::cout << "Fuck - 3" << std::endl;
       answer = name + ": ERROR (spawn error)";
       program.doLog(e.what(), Log::LogLevel::ERR, processName);
       return;
