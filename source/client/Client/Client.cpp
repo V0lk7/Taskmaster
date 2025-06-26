@@ -121,34 +121,41 @@ std::vector<std::string> Client::processArgs(std::vector<std::string> &args) {
   std::vector<std::string> formattedArgs;
   std::map<std::string, std::vector<ProcessInfo>> processMap =
       _console.getProcessMap();
-
+  
   for (const auto &arg : args) {
     std::vector<std::string> splitArgs = Utils::split(arg, ":");
-    if (splitArgs.size() == 1 && splitArgs[0] != "*") {
-      // Single program name
+
+    if (splitArgs.size() == 1) {
+      // single program name
       formattedArgs.push_back(splitArgs[0]);
+    } else if (splitArgs.size() > 2) {
+      std::string firstArg = splitArgs[0];
+      splitArgs.erase(splitArgs.begin());
+      firstArg += ":" + Utils::concat(splitArgs, ":");
+      formattedArgs.push_back(firstArg);
     } else {
-      if (splitArgs[1] == "*") {
+      std::string groupName = splitArgs[0];
+      std::string programName = splitArgs[1];
+
+      if (programName == "*") {
         // Group name with wildcard
-        for (const auto &pair : processMap) {
-          if (pair.first == splitArgs[0]) {
-            for (const auto &process : pair.second) {
-              formattedArgs.push_back(pair.first + ":" + process.name);
-              std::cout << "Adding process: " << pair.first + ":" + process.name
-                        << std::endl;
-            }
+        auto it = processMap.find(groupName);
+        if (it != processMap.end()) {
+          for (const auto &process : it->second) {
+            formattedArgs.push_back(groupName + ":" + process.name);
           }
-        }
-        if (formattedArgs.empty()) {
-          formattedArgs.push_back(splitArgs[0]);
+        } else {
+          // If group not found, just add the group name
+          formattedArgs.push_back(groupName);
         }
       } else {
         // Specific program in a group
-        std::string fullName = splitArgs[0] + ":" + splitArgs[1];
+        std::string fullName = groupName + ":" + programName;
         formattedArgs.push_back(fullName);
       }
     }
   }
+  return formattedArgs;
 
   // std::vector<std::string> processList = _console.getProcessList();
 
@@ -177,10 +184,6 @@ std::vector<std::string> Client::processArgs(std::vector<std::string> &args) {
   //     }
   //   }
   // }
-  for (auto &arg : formattedArgs) {
-    std::cout << "Adding argument: " << arg << std::endl;
-  }
-  return formattedArgs;
 }
 
 bool Client::sendCmd(const std::string &cmd, std::vector<std::string> &args) {

@@ -1,12 +1,12 @@
 unix_http_server:
-  file: unix:///home/jduval/Documents/Taskmaster/taskmaster.sock
+  file: unix:///home/jduval/Documents/Project/Taskmaster/taskmaster.sock
   chmod: 0655
 taskmasterd:
   logfile: ./logs/taskmasterd.log
   loglevel: INFO
 
 taskmasterctl:
-  serverurl: unix:///home/jduval/Documents/Taskmaster/taskmaster.sock
+  serverurl: unix:///home/jduval/Documents/Project/Taskmaster/taskmaster.sock
 
 programs:
   - name: simple_http #require
