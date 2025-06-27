@@ -9,6 +9,17 @@ public:
 
     Console::_processList = {"program1", "program2", "group1:program3",
                              "group1:program4"};
+    Console::_processMap.insert(std::make_pair(
+        "program1", std::vector<ProcessInfo>(
+                        {ProcessInfo("program1", "running", "No issues")})));
+
+    Console::_processMap.insert(std::make_pair(
+        "program2", std::vector<ProcessInfo>(
+                        {ProcessInfo("program2", "running", "No issues")})));
+    Console::_processMap.insert(std::make_pair(
+        "group1", std::vector<ProcessInfo>(
+                      {ProcessInfo("program3", "running", "No issues"),
+                       ProcessInfo("program4", "running", "No issues")})));
   }
 
   void setProcessList(std::vector<std::string> processList) {
@@ -71,7 +82,7 @@ TEST_CASE("Client::processArgs - edge cases", "[Client]") {
 
   SECTION("Group with wildcard and no matching processes") {
     std::vector<std::string> args = {"group2:*"};
-    std::vector<std::string> expected = {};
+    std::vector<std::string> expected = {"group2"};
     clientTest.testProcessArgs(args, expected);
   }
 

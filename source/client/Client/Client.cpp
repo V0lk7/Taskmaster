@@ -120,7 +120,7 @@ void Client::addCmdToQueue(std::vector<std::string> &args) {
       }
     }
     std::cout << "size = " << _cmdQueue.size() << std::endl;
-    return ; // No need to push the restart command itself
+    return; // No need to push the restart command itself
   }
 
   if (args.size() == 0) {
@@ -140,7 +140,7 @@ std::vector<std::string> Client::processArgs(std::vector<std::string> &args) {
   std::vector<std::string> formattedArgs;
   std::map<std::string, std::vector<ProcessInfo>> processMap =
       _console.getProcessMap();
-  
+
   for (const auto &arg : args) {
     std::vector<std::string> splitArgs = Utils::split(arg, ":");
 
@@ -175,34 +175,6 @@ std::vector<std::string> Client::processArgs(std::vector<std::string> &args) {
     }
   }
   return formattedArgs;
-
-  // std::vector<std::string> processList = _console.getProcessList();
-
-  // for (const auto &arg : args) {
-  //   std::vector<std::string> splitArgs = Utils::split(arg, ":");
-  //   if (splitArgs.size() == 1 && splitArgs[0] != "*") {
-  //     // Single program name
-  //     formattedArgs.push_back(splitArgs[0]);
-  //   } else {
-  //     if (splitArgs[1] == "*") {
-  //       // Group name with wildcard
-  //       for (const auto &process : processList) {
-  //         if (process == splitArgs[0] + ":*") {
-  //           continue; // Skip wildcard itself
-  //         } else if (process.find(splitArgs[0] + ":") == 0) {
-  //           formattedArgs.push_back(process);
-  //         }
-  //       }
-  //       if (formattedArgs.empty()) {
-  //         formattedArgs.push_back(splitArgs[0]);
-  //       }
-  //     } else {
-  //       // Specific program in a group
-  //       std::string fullName = splitArgs[0] + ":" + splitArgs[1];
-  //       formattedArgs.push_back(fullName);
-  //     }
-  //   }
-  // }
 }
 
 bool Client::sendCmd(const std::string &cmd, std::vector<std::string> &args) {
