@@ -5,16 +5,12 @@
 
 static void signalHandler(int signal);
 static bool setUpSignalHandler();
-
-static bool dropToNobody();
+static void daemonize();
 
 std::atomic<Daemon *> daemonHandler{nullptr};
 
 int main(int argc, char **argv) {
-  if (!dropToNobody()) {
-    std::cerr << "Error: Can\'t drop privileges!" << std::endl;
-    return 1;
-  }
+  daemonize();
   if (argc < 2) {
     std::cerr << "Usage: " << argv[0] << " <config_file>" << std::endl;
     return 1;
@@ -27,10 +23,6 @@ int main(int argc, char **argv) {
   if (access(config_file.c_str(), R_OK) == -1) {
     std::cerr << "Error: Unable to access config file." << std::endl;
     return 1;
-  }
-  if (!setUpSignalHandler()) {
-    std::cerr << "Error: Internal error state! Can\'t configure signals."
-              << std::endl;
   }
   try {
     Daemon *daemon = parsingFile(config_file);
@@ -71,20 +63,49 @@ static void signalHandler(int signal) {
     delete daemon;
     exit(0);
   } else if (signal == SIGHUP) {
-	daemon->sendLogs("Reloading configuration.", "INFO");
-	reloadConf(daemon);
+    daemon->sendLogs("Reloading configuration.", "INFO");
+    reloadConf(daemon);
   }
 }
 
-static bool dropToNobody() {
-  if (getuid() == 0) {
-    if (setgid(getgid()) != 0) {
-      return false;
-    }
-    if (setuid(getuid()) != 0) {
-      return false;
-    }
+static void daemonize() {
+  pid_t pid = fork();
+
+  if (pid < 0) {
+    exit(EXIT_FAILURE);
+  }
+  if (pid > 0) {
+    // Parent exits, child continues
+    exit(EXIT_SUCCESS);
   }
 
-  return true;
+  // Child becomes session leader
+  if (setsid() < 0) {
+    exit(EXIT_FAILURE);
+  }
+
+  if (!setUpSignalHandler()) {
+    std::cerr << "Error: Internal error state! Can\'t configure signals."
+              << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  pid = fork();
+  if (pid < 0) {
+    exit(EXIT_FAILURE);
+  }
+  if (pid > 0) {
+    // Exit the first child
+    exit(EXIT_SUCCESS);
+  }
+
+  // Close all open file descriptors
+  for (int x = sysconf(_SC_OPEN_MAX); x >= 0; x--) {
+    close(x);
+  }
+
+  // Redirect stdin, stdout, stderr to /dev/null
+  open("/dev/null", O_RDWR); // stdin
+  dup(0);                    // stdout
+  dup(0);                    // stderr
 }

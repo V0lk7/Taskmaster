@@ -21,6 +21,7 @@
 #include <fcntl.h>
 #include <pwd.h>
 #include <sys/epoll.h>
+#include <sys/prctl.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
