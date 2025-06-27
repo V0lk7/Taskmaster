@@ -143,6 +143,13 @@ std::vector<Program> parsingPrograms(YAML::Node programs, std::vector<Log> logge
 		for (const auto& logger : loggersDaemon) {
 			new_program.addLog(logger);
 		}
+		for (auto it = programs_list.begin(); it != programs_list.end(); ) {
+			if (it->getName() == new_program.getName()) {
+				it = programs_list.erase(it);
+			} else {
+				++it;
+			}
+		}
 		programs_list.push_back(new_program);
 	}
 	return programs_list;
