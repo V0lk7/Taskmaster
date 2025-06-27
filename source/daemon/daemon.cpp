@@ -33,6 +33,18 @@ Daemon::~Daemon() {
   }
 }
 
+void Daemon::cleanSocket() {
+  if (this->sockEndPoint > -1) {
+    (void)nn_shutdown(this->socketFd, 0);
+  }
+  if (this->socketFd != -1) {
+    (void)nn_close(this->socketFd);
+  }
+  if (!this->socketPath.empty()) {
+    (void)unlink(this->socketPath.c_str());
+  }
+}
+
 void Daemon::setIpc() {
   checkSocketFile();
   // Initialize the socket
@@ -198,6 +210,7 @@ void Daemon::processMessage(std::string const message) {
     cmdStatus(param, answer);
   } else if (keys[0] == Commands::RELOAD) {
     cmdReload(answer);
+    return;
   } else if (keys[0] == Commands::PING) {
     answer = Commands::PONG;
   } else {
@@ -318,6 +331,10 @@ void Daemon::cmdStatus(std::string name, std::string &answer) {
 
 void Daemon::cmdReload(std::string &answer) {
   answer = "Restarted taskmasterd.";
+  if (nn_send(this->socketFd, answer.c_str(), answer.size(), 0) < 1) {
+    std::cerr << "Error sending answer: " << nn_strerror(nn_errno())
+              << std::endl;
+  }
   reloadConf(this);
 }
 
