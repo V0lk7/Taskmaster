@@ -134,7 +134,7 @@ std::vector<Program> parsingPrograms(YAML::Node programs, std::vector<Log> logge
 		}
 		YAML::Node umask = program["umask"];
 		if (umask) {
-			mode_t program_umask = umask.as<mode_t>();
+			mode_t program_umask = std::stoi(umask.as<std::string>(), nullptr, 8);
 			if (program_umask < 0) {
 				throw std::runtime_error("Error: 'umask' must be greater than or equal to 0.");
 			}
