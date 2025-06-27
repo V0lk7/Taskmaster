@@ -65,6 +65,8 @@ void Process::start(mode_t umask_process, const std::string &workdir,
                              std::string(strerror(errno)));
     return;
   } else if (pid == 0) {
+    prctl(PR_SET_PDEATHSIG, SIGTERM);
+
     char *completeCommand[4];
     completeCommand[0] = const_cast<char *>("/bin/sh");
     completeCommand[1] = const_cast<char *>("-c");
