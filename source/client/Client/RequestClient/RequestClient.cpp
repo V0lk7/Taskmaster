@@ -76,8 +76,8 @@ bool RequestClient::socketFileExists() {
     logError(std::string("connectToDaemon - File Empty!"));
     return false;
   }
-  if (_sockFile.find(IPC) == std::string::npos ||
-      _sockFile.find(UNIX) == std::string::npos) {
+  if (_sockFile.find(IPC) != std::string::npos ||
+      _sockFile.find(UNIX) != std::string::npos) {
     size_t pos = _sockFile.find(IPC) == std::string::npos ? 7 : 6;
     name = std::string(_sockFile.begin() + pos, _sockFile.end());
 

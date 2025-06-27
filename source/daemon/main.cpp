@@ -10,10 +10,25 @@ static void daemonize();
 std::atomic<Daemon *> daemonHandler{nullptr};
 
 int main(int argc, char **argv) {
-  daemonize();
   if (argc < 2) {
-    std::cerr << "Usage: " << argv[0] << " <config_file>" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <config_file>" << "optionnal: <-n>"
+              << std::endl;
     return 1;
+  }
+  std::string param = argc > 2 ? argv[2] : "";
+  if (param.empty()) {
+    daemonize();
+  } else if (param != "-n") {
+    std::cerr << "Invalid option: " << param << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <config_file>" << "optionnal: <-n>"
+              << std::endl;
+    return 1;
+  } else {
+    if (setUpSignalHandler() == false) {
+      std::cerr << "Error: Internal error state! Can't configure signals."
+                << std::endl;
+      return 1;
+    }
   }
   std::string config_file = argv[1];
   if (config_file.empty()) {

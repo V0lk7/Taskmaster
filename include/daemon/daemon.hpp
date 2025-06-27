@@ -11,6 +11,13 @@ public:
   Daemon(std::string socketPath, Log logInfo, std::string confPath);
   ~Daemon();
 
+  static constexpr char IPC[] = "ipc://";
+
+  void setIpc();
+  void checkSocketFile();
+  void formatSocketFileName();
+  void cleanSocket();
+
   void start();
   void stop();
 
@@ -48,15 +55,10 @@ private:
   struct nn_pollfd pfd;
 
   static constexpr int TIMEOUT = 10;
-  static constexpr char IPC[] = "ipc://";
   static constexpr char UNIX[] = "unix://";
 
   std::vector<Log> loggers;
   std::vector<Program> programs;
-
-  void setIpc();
-  void checkSocketFile();
-  void formatSocketFileName();
 
   bool listenClients();
   void processMessage(std::string const);
