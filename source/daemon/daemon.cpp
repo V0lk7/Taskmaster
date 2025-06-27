@@ -29,6 +29,7 @@ Daemon::~Daemon() {
     (void)nn_close(this->socketFd);
   }
   if (!this->socketPath.empty()) {
+    std::cout << "Unlinking socket file: " << this->socketPath << std::endl;
     (void)unlink(this->socketPath.c_str());
   }
 }

@@ -18,9 +18,8 @@ void reloadConf(Daemon *daemon) {
         config["unix_http_server"]["file"].as<std::string>();
 
     std::string oldSocketPath = daemon->getSocketPath();
+    oldSocketPath = oldSocketPath.substr(std::string("ipc://").length());
 
-    std::cout << "Old socket path: " << oldSocketPath << std::endl;
-    std::cout << "New socket path: " << socketPath << std::endl;
     if (socketPath != oldSocketPath) {
       daemon->cleanSocket();
       daemon->setSocketPath(socketPath);
