@@ -91,12 +91,6 @@ void reloadConf(Daemon *daemon) {
               " not found in the current configuration, adding it.",
           "INFO");
       daemon->addProgram(program);
-      if (program.getAutostart()) {
-        daemon->sendLogs("Starting new program " + program.getName() +
-                             " after configuration change.",
-                         "INFO");
-        program.start("");
-      }
     }
   }
 }
