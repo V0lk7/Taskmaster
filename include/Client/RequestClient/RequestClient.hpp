@@ -17,6 +17,8 @@ public:
   void setAddFdToEpoll(std::function<void()> const &);
   void setRemoveFdFromEpoll(std::function<void()> const &);
 
+  void setFdIntoEpoll(bool);
+
 private:
   enum class State { idle, connected, waitingResponse };
 
@@ -24,6 +26,7 @@ private:
   int _sockFd; // nanomsg socket
   int _rcvFd;  // Used to epoll on the nano socket
   State _state;
+  bool _fdIntoEpoll = false;
 
   std::function<void()> _addFdToEpoll;
   std::function<void()> _removeFdFromEpoll;
@@ -34,9 +37,9 @@ private:
   static constexpr char UNIX[] = "unix://";
 
   bool socketFileExists();
-  // bool tryRecv(std::string &, const std::string &expected = "");
   void logError(const std::string &msg, const int &error = -1);
   bool connectToSocket();
+  bool sendPing();
 };
 
 #endif

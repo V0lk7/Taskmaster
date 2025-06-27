@@ -198,6 +198,8 @@ void Daemon::processMessage(std::string const message) {
   } else if (keys[0] == Commands::RELOAD) {
     std::cout << "Command \"RELOAD\" received" << std::endl;
     answer = "OK";
+  } else if (keys[0] == Commands::PING) {
+    answer = Commands::PONG;
   } else {
     std::cout << "Unknown message : |" << message << "|" << std::endl;
     answer = "KO";

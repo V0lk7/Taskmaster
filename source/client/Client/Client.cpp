@@ -32,6 +32,7 @@ bool Client::setupClient(std::string const &conf) {
     if (!_epoll.addFd(rcvFd, false)) {
       logError("setupClient() - Failed to add request socket to epoll.");
     }
+    _request.setFdIntoEpoll(true);
   });
   _request.setRemoveFdFromEpoll([this]() {
     int rcvFd = _request.getrcvFd();
@@ -41,6 +42,7 @@ bool Client::setupClient(std::string const &conf) {
     if (!_epoll.removeFd(rcvFd)) {
       logError("setupClient() - Failed to remove request socket from epoll.");
     }
+    _request.setFdIntoEpoll(false);
   });
 
   _console.setEOFHandler([this]() {
@@ -311,6 +313,8 @@ bool Client::run() {
           if (!_request.receiveMsg(answer)) {
             logError("Internal error! Can\'t receive message from server.");
             _state = State::running;
+            _console.resetPrompt();
+            _console.enableHandler();
           } else {
             processReply(_currentCmdRequest.cmd, answer);
           }
@@ -328,7 +332,7 @@ bool Client::run() {
         _cmdQueue = std::queue<CmdRequest>();
       }
     }
-    usleep(10000); // Sleep for 100ms to avoid busy waiting
+    usleep(10000); // Sleep for 10ms to avoid busy waiting
   }
   return true;
 }

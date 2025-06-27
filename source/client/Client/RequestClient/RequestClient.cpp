@@ -1,5 +1,6 @@
 #include "Client/RequestClient/RequestClient.hpp"
 #include "common/Utils.hpp"
+#include "nanomsg/nn.h"
 
 constexpr char RequestClient::IPC[];
 constexpr char RequestClient::UNIX[];
@@ -95,14 +96,47 @@ bool RequestClient::socketFileExists() {
 
 int RequestClient::getrcvFd() const { return _rcvFd; }
 
+bool RequestClient::sendPing() {
+  std::string ping = "ping";
+  ssize_t s = nn_send(_sockFd, ping.c_str(), ping.size(), 0);
+
+  if (s == -1 || s < static_cast<ssize_t>(ping.size())) {
+    return false;
+  }
+  _state = State::waitingResponse;
+  for (int i = 0; i < 3; ++i) {
+    if (receiveMsg(ping)) {
+      if (ping == "pong") {
+        return true;
+      }
+    } else {
+      usleep((TIMEOUT * 1000) / 3); // Wait for 1/3 of the timeout
+    }
+  }
+  return false;
+}
+
+void RequestClient::setFdIntoEpoll(bool value) { _fdIntoEpoll = value; }
+
 bool RequestClient::sendMsg(std::vector<std::string> const &msg) {
   if (_state == State::idle) {
     if (!connectToSocket()) {
-      if (_removeFdFromEpoll) {
+      if (_removeFdFromEpoll && _fdIntoEpoll) {
         _removeFdFromEpoll();
       }
+      nn_close(_sockFd);
       return false;
     }
+  }
+
+  if (!sendPing()) {
+    if (_fdIntoEpoll) {
+      _removeFdFromEpoll();
+    }
+    nn_close(_sockFd);
+    logError("Connection refused !");
+    _state = State::idle;
+    return false;
   }
 
   std::ostringstream oss;
@@ -142,7 +176,7 @@ bool RequestClient::receiveMsg(std::string &answer) {
 
   switch (bytes) {
   case -1:
-    if (_removeFdFromEpoll) {
+    if (_removeFdFromEpoll && _fdIntoEpoll) {
       _removeFdFromEpoll();
     }
     return false;

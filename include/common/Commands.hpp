@@ -25,6 +25,8 @@ public:
   static constexpr auto QUIT = "quit";
   static constexpr auto HELP = "help";
   static constexpr auto EXIT = "exit";
+  static constexpr auto PING = "ping";
+  static constexpr auto PONG = "pong";
 
   static CMD getCommand(const std::string &cmd) {
     if (cmd == STATUS) {
