@@ -105,21 +105,16 @@ void Client::addCmdToQueue(std::vector<std::string> &args) {
   }
 
   if (cmd == Commands::CMD::restart) {
-    for (auto arg : args) {
-      std::vector<std::string> formattedArgs = processArgs(args);
+    std::vector<std::string> formattedArgs = processArgs(args);
 
-      for (auto &arg : formattedArgs) {
-        _cmdQueue.push({Commands::CMD::stop, {arg}, ""});
-      }
+    for (auto &arg : formattedArgs) {
+      _cmdQueue.push({Commands::CMD::stop, {arg}, ""});
     }
-    for (auto arg : args) {
-      std::vector<std::string> formattedArgs = processArgs(args);
+    formattedArgs = processArgs(args);
 
-      for (auto &arg : formattedArgs) {
-        _cmdQueue.push({Commands::CMD::start, {arg}, ""});
-      }
+    for (auto &arg : formattedArgs) {
+      _cmdQueue.push({Commands::CMD::start, {arg}, ""});
     }
-    std::cout << "size = " << _cmdQueue.size() << std::endl;
     return; // No need to push the restart command itself
   }
 
@@ -333,6 +328,7 @@ bool Client::run() {
         _cmdQueue = std::queue<CmdRequest>();
       }
     }
+    usleep(10000); // Sleep for 100ms to avoid busy waiting
   }
   return true;
 }
