@@ -15,12 +15,8 @@ public:
   void stop();
 
   void startAllPrograms(); // initial start
-  // void startProgram(std::string const &);
-  // void startProgram(std::vector<std::string> const &);
 
   void stopAllPrograms();
-  // void stopProgram(std::string);
-  // void stopProgram(std::vector<std::string> const &);
 
   void addProgram(Program &program);
   void removeProgram(Program &program);
@@ -67,8 +63,7 @@ private:
 
   void cmdStart(std::string, std::string &);
   void cmdStop(std::string, std::string &);
-  void cmdReload(std::string, std::string &);
-  void cmdRestart(std::string, std::string &);
+  void cmdReload(std::string &);
   void cmdStatus(std::string, std::string &);
 };
 

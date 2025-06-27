@@ -268,7 +268,6 @@ bool Client::cmdReload(CmdRequest &request) {
   _console.setQuestionState(prompt, [this](std::string arg) {
     if (arg.empty() || arg == "y" || arg == "Y" || arg == "yes" ||
         arg == "YES") {
-      //_console.disableHandler();
       std::cout << "Restarting remote taskmasterd..." << std::endl;
       if (sendCmd(Commands::cmdToString(_currentCmdRequest.cmd),
                   _currentCmdRequest.args)) {
@@ -276,6 +275,7 @@ bool Client::cmdReload(CmdRequest &request) {
         return;
       }
     }
+    std::cout << "Reload cancelled." << std::endl;
     _state = State::running;
     _console.enableHandler();
   });
@@ -382,7 +382,9 @@ void Client::processReply(const Commands::CMD &cmd, const std::string &reply) {
     cmdRestartAnswer(reply);
     break;
   case Commands::CMD::reload:
+    _console.clearPrompt();
     cmdReloadAnswer(reply);
+    _console.resetPrompt();
     break;
   default:
     logError("processReply() - Unknown command received: " + reply);

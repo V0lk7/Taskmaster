@@ -1,6 +1,7 @@
 #include "daemon/daemon.hpp"
 #include "common/Commands.hpp"
 #include "common/Utils.hpp"
+#include "daemon/parsing/reloadParsing.hpp"
 #include "nanomsg/nn.h"
 
 constexpr char Daemon::IPC[];
@@ -196,8 +197,7 @@ void Daemon::processMessage(std::string const message) {
   } else if (keys[0] == Commands::STATUS) {
     cmdStatus(param, answer);
   } else if (keys[0] == Commands::RELOAD) {
-    std::cout << "Command \"RELOAD\" received" << std::endl;
-    answer = "OK";
+    cmdReload(answer);
   } else if (keys[0] == Commands::PING) {
     answer = Commands::PONG;
   } else {
@@ -316,15 +316,9 @@ void Daemon::cmdStatus(std::string name, std::string &answer) {
   }
 }
 
-void Daemon::cmdReload(std::string name, std::string &answer) {
-  std::cout << "Command \"RELOAD\" received for program: " << name << std::endl;
-  answer = "OK";
-}
-
-void Daemon::cmdRestart(std::string name, std::string &answer) {
-  std::cout << "Command \"RESTART\" received for program: " << name
-            << std::endl;
-  answer = "OK";
+void Daemon::cmdReload(std::string &answer) {
+  answer = "Restarted taskmasterd.";
+  reloadConf(this);
 }
 
 std::string Daemon::stringStatusProgram(std::string name) {
